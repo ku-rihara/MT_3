@@ -1,14 +1,10 @@
 #include <Novice.h>
 #include<cmath>
 #include<assert.h>
+#include"Vector3.h"
 
 
 const char kWindowTitle[] = "LE2A_11_クリハラ_ケイタ_タイトル";
-struct Vector3 {
-	float x;
-	float y;
-	float z;
-};
 
 struct Matrix4x4 {
 	float m[4][4];
@@ -127,7 +123,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Vector3 ndcVertex = Transform(klocalVertices[i], worldViewProjectionMatrix);
 			screenVertices[i] = Transform(ndcVertex, viewportMatrix);
 		}
-		Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y), int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeSolid);
+		Vector3 cross2 = cameraPos * Cross((screenVertices[1] - screenVertices[0]), (screenVertices[2] - screenVertices[1]));
+		if (cross2.x <= 0 && cross2.y <= 0 && cross2.z <= 0) {
+			Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y), int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeSolid);
+		}
+
+
 		VectorScreenPrintf(0, 0, cross, "Cross");
 
 		/// ↑描画処理ここまで
