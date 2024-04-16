@@ -15,7 +15,6 @@ static const int kColumnWidth = 60;
 static const int kWindowWidth = 1280;
 static const int kWindowHeight = 720;
 
-
 Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
 
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
@@ -45,6 +44,8 @@ Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, f
 
 Vector3 Cross(const Vector3& v1, const Vector3& v2);
 
+void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMatrix);
+
 void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -52,21 +53,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
-
-	Vector3 v1{ 1.2f,-3.9f,2.5f };
-	Vector3 v2{ 2.8f,0.4f,-1.3f };
-
-	Vector3 rotate{};
-	Vector3 translate{};
-	Vector3 cameraPos{ 0,0,-10 };
-
-	// 正三角形のローカル頂点座標
-	const Vector3 klocalVertices[3] = {
-		{0.0f, 1.0f, 0.0f},
-		{1.0f, -1.0f,0.0f},
-		{-1.0f,-1.0f,0.0f}
-	};
-	Vector3 screenVertices[3]{};
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -84,34 +70,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
-		Vector3 cross = Cross(v1, v2);
-
-		if (keys[DIK_W]) {
-			translate.z += 1.0f / 60.0f;
-		}
-
-		else if (keys[DIK_S]) {
-			translate.z -= 1.0f / 60.0f;
-		}
-
-		else if (keys[DIK_A]) {
-			translate.x -= 1.0f / 60.0f;
-		}
-
-		else if (keys[DIK_D]) {
-			translate.x += 1.0f / 60.0f;
-		}
-		rotate.y += 0.01f;
-
-		Matrix4x4 camelaMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0.0f,0.0f,0.0f }, cameraPos);
-		Matrix4x4 viewMatrix = Inverse(camelaMatrix);
-		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
-
-
-		Matrix4x4 worldMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, rotate, translate);
-		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
-		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
-
+		
 		///
 		/// ↑更新処理ここまで
 		///
@@ -119,17 +78,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
-		for (uint32_t i = 0; i < 3; ++i) {
-			Vector3 ndcVertex = Transform(klocalVertices[i], worldViewProjectionMatrix);
-			screenVertices[i] = Transform(ndcVertex, viewportMatrix);
-		}
-		Vector3 cross2 = cameraPos * Cross((screenVertices[1] - screenVertices[0]), (screenVertices[2] - screenVertices[1]));
-		if (cross2.x <= 0 && cross2.y <= 0 && cross2.z <= 0) {
-			Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y), int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeSolid);
-		}
-
-
-		VectorScreenPrintf(0, 0, cross, "Cross");
+		
 
 		/// ↑描画処理ここまで
 		///
@@ -418,4 +367,22 @@ void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label) 
 	Novice::ScreenPrintf(x + kColumnWidth, y, "%.02f", vector.y);
 	Novice::ScreenPrintf(x + kColumnWidth * 2, y, "%.02f", vector.z);
 	Novice::ScreenPrintf(x + kColumnWidth * 3, y, "%s", label);
+}
+void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
+	const float kGridHalfWidth = 2.0f;//Gridの半分の幅
+	const uint32_t kSubdivision = 10;//分割数
+	const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision);//1つ分の長さ
+	//奥から手前への線を順々に引いていく
+	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
+		float start = 0 * kGridEvery;
+		float end = kSubdivision * kGridEvery;
+		Vector3 ndc = Transform(Vector3(0,0,0), viewProjectionMatrix);
+		Vector3 screen = Transform(Vector3(0, 0, 0), viewportMatrix);
+		Novice::DrawLine(int())
+	}
+
+	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
+
+	}
+
 }
