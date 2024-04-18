@@ -71,7 +71,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
+		Matrix4x4 camelaMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
+		Matrix4x4 viewMatrix = Inverse(camelaMatrix);
+		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
+
+
 		
+		Matrix4x4 ViewProjectionMatrix = Multiply(camelaMatrix, Multiply(viewMatrix, projectionMatrix));
+		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
+
 		///
 		/// ↑更新処理ここまで
 		///
@@ -79,7 +87,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
-		
+		DrawGrid(ViewProjectionMatrix, viewportMatrix);
 
 		/// ↑描画処理ここまで
 		///
@@ -377,9 +385,9 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
 		float start = 0 * kGridEvery;
 		float end = kSubdivision * kGridEvery;
-		Vector3 ndc = Transform(Vector3(0,0,0), viewProjectionMatrix);
-		Vector3 screen = Transform(Vector3(0, 0, 0), viewportMatrix);
-		Novice::DrawLine(0, int(start), 1280, int(end),0xAAAAAAFF);
+		Vector3 ndc = Transform(Vector3(1,1,1), viewProjectionMatrix);
+		Vector3 screen = Transform(ndc, viewportMatrix);
+		Novice::DrawLine(0, int(start), int(kGridEvery), int(end),0xAAAAAAFF);
 	}
 
 	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
@@ -389,3 +397,6 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 }
 
 
+//float start[kSubdivision + 1];
+//Vector3 ndc[kSubdivision + 1];
+//Vector3 screen[kSubdivision + 1];
