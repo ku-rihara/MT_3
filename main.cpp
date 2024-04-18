@@ -53,7 +53,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
-
+	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
+	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
@@ -378,7 +379,7 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 		float end = kSubdivision * kGridEvery;
 		Vector3 ndc = Transform(Vector3(0,0,0), viewProjectionMatrix);
 		Vector3 screen = Transform(Vector3(0, 0, 0), viewportMatrix);
-		Novice::DrawLine(int())
+		Novice::DrawLine(0, int(start), 1280, int(end),0xAAAAAAFF);
 	}
 
 	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
@@ -386,3 +387,5 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 	}
 
 }
+
+
