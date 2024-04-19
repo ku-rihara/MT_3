@@ -1,4 +1,5 @@
 #include <Novice.h>
+#define _USE_MATH_DEFINES
 #include<cmath>
 #include<assert.h>
 #include"Vector3.h"
@@ -8,6 +9,11 @@ const char kWindowTitle[] = "LE2A_11_クリハラ_ケイタ_タイトル";
 
 struct Matrix4x4 {
 	float m[4][4];
+};
+
+struct Sphere {
+	Vector3 center;//中心
+	float radius;//半径
 };
 
 static const int kRowHeight = 20;
@@ -20,6 +26,7 @@ Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
 Matrix4x4 MakeTranslateMatrix(const Vector3& translate);
 
 Matrix4x4 MakeScaleMatrix(const Vector3& scale);
+Vector3 ScreenTransform(const Vector3& local, const Matrix4x4& viewprojection, const Matrix4x4& viewport);
 
 //X軸回転行列
 Matrix4x4 MakeRotateXMatrix(float radian);
@@ -46,6 +53,8 @@ Vector3 Cross(const Vector3& v1, const Vector3& v2);
 
 void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMatrix);
 
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
+
 void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -53,6 +62,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
+	Sphere sphere{ Vector3{100,100,100},20 };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	// キー入力結果を受け取る箱
@@ -88,6 +98,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
+		DrawSphere(sphere,ViewProjectionMatrix, viewportMatrix, 0xAAAAAAFF);
 
 		/// ↑描画処理ここまで
 		///
@@ -249,6 +260,13 @@ Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
 	return result;
 }
 
+Vector3 ScreenTransform(const Vector3& local, const Matrix4x4& viewprojection, const Matrix4x4& viewport) {
+	Vector3 result;
+	result = Transform(local, viewprojection);
+	result = Transform(result, viewport);
+	return result;
+}
+
 Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3 translate) {
 	Matrix4x4 scaleMatrix;
 	Matrix4x4 rotateMatrix;
@@ -381,17 +399,50 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 	const float kGridHalfWidth = 2.0f;//Gridの半分の幅
 	const uint32_t kSubdivision = 10;//分割数
 	const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision);//1つ分の長さ
+	Vector3 start;
+	Vector3 end;
 	//奥から手前への線を順々に引いていく
 	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
-		float start = 0 * kGridEvery;
-		float end = kSubdivision * kGridEvery;
-		Vector3 ndc = Transform(Vector3(1,1,1), viewProjectionMatrix);
+		 start.x = xIndex * kGridEvery;
+		 start.z = kGridEvery;
+		 end.z = kSubdivision * kGridEvery;
+		
+		Vector3 ndc = Transform(start, viewProjectionMatrix);
 		Vector3 screen = Transform(ndc, viewportMatrix);
-		Novice::DrawLine(0, int(start), int(kGridEvery), int(end),0xAAAAAAFF);
+		Vector3 ndc2 = Transform(end, viewProjectionMatrix);
+		Vector3 screen2 = Transform(ndc2, viewportMatrix);
+		Novice::DrawLine(int(screen.x), int(screen.z), int(screen.x), int(screen2.z),0xAAAAAAFF);
 	}
 
 	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
 
+	}
+
+}
+
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color) {
+	float pi = float(M_PI);
+	const uint32_t kSbudivision = 30;//分割数
+	const float kLonEvery = (2* pi)/ kSbudivision;//経度分割1つ分の角度
+	const float kLatEvery = pi / kSbudivision;//緯度分割1つ分の角度
+
+	//緯度の方向に分割　-π/2～π/2
+	for (uint32_t latindex = 0; latindex < kSbudivision; ++latindex) {
+		float lat = -pi / 2.0f + kLatEvery * latindex;//現在の緯度
+		//経度の方向に分割0～2π
+		for (uint32_t lonIndex = 0; lonIndex < kSbudivision; ++lonIndex) {
+			float lon = lonIndex * kLonEvery;//現在の経度
+			//world座標系でのa,b,cを求める
+			Vector3 a, b, c;
+			a = { std::cos(lat) * std::cos(lon),std::sin(lat),std::cos(lat) * std::cos(lon) };
+			b = { std::cos(lat + kLatEvery) * std::cos(lon),std::sin(lat + kLatEvery),std::cos(lat + kLatEvery) * std::sin(lon) };
+			c = { std::cos(lat) * std::cos(lon + kLonEvery),std::sin(lat),std::cos(lat) * std::sin(lon + kLonEvery) };
+			Vector3 screenA = ScreenTransform(a,viewProjectionMatrix,viewprtMatrix);
+			Vector3 screenB = ScreenTransform(b, viewProjectionMatrix, viewprtMatrix);
+			Vector3 screenC = ScreenTransform(c, viewProjectionMatrix, viewprtMatrix);
+			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenB.x), int(screenB.y), color);
+			Novice::DrawLine(int(screenB.x), int(screenB.y), int(screenC.x), int(screenC.y), color);
+		}
 	}
 
 }
