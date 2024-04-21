@@ -418,6 +418,7 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 
 }
 
+
 void DrawSphere(const Sphere& sphere,const Matrix4x4& viewMatrix,const Matrix4x4& ProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color) {
 	float pi = float(M_PI);
 	const uint32_t kSbudivision = 20;//分割数
