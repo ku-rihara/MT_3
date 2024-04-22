@@ -112,7 +112,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
+		Vector3 cross2 = cameraPos * Cross((screenVertices[1] - screenVertices[0]), (screenVertices[2] - screenVertices[1]));
+
 		///
+		/// 
 		/// ↑更新処理ここまで
 		///
 
@@ -123,10 +126,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Vector3 ndcVertex = Transform(klocalVertices[i], worldViewProjectionMatrix);
 			screenVertices[i] = Transform(ndcVertex, viewportMatrix);
 		}
-		Vector3 cross2 = cameraPos * Cross((screenVertices[1] - screenVertices[0]), (screenVertices[2] - screenVertices[1]));
-		if (cross2.x <= 0 && cross2.y <= 0 && cross2.z <= 0) {
+		
 			Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y), int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeSolid);
-		}
+		
 
 
 		VectorScreenPrintf(0, 0, cross, "Cross");
