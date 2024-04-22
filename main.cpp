@@ -64,7 +64,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
-	Sphere sphere{ Vector3{},1.0f };
+	Sphere sphere{ Vector3{},0.5f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	// キー入力結果を受け取る箱
@@ -404,31 +404,58 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 	const float kGridHalfWidth = 2.0f;//Gridの半分の幅
 	const uint32_t kSubdivision = 10;//分割数
 	const float kGridEvery = (kGridHalfWidth * 2.0f) / float(kSubdivision);//1つ分の長さ
-	Vector3 start;
-	Vector3 end;
+	Vector3 zLineStart;
+	Vector3 zLineEnd;
+	Vector3 xLineStart;
+	Vector3 xLineEnd;
 	//奥から手前への線を順々に引いていく
 	for (uint32_t xIndex = 0; xIndex <= kSubdivision; ++xIndex) {
-		 start.x = xIndex * kGridEvery;
-		 start.z = kGridEvery;
-		 end.z = kSubdivision * kGridEvery;
+		//上の情報を使ってワールド座標系の始点と終点を求める
+		   // ワールド座標系でのグリッドの始点と終点を設定
+		zLineStart = Vector3(xIndex * kGridEvery - kGridHalfWidth, 0, kGridHalfWidth);
+		zLineEnd = Vector3(xIndex * kGridEvery - kGridHalfWidth, 0, -kGridHalfWidth);
 
 		 //アフィン変換
-		 Matrix4x4 startMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, start);
-		 Matrix4x4 endMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, end);
+		 Matrix4x4  zLineStartMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineStart);
+		 Matrix4x4 zLineEndMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineEnd);
 		 //wvpMatrix
-		 Matrix4x4 startwvpMatrix = Multiply(startMatrix, viewProjectionMatrix);
-		 Matrix4x4 endwvpMatrix = Multiply(endMatrix, viewProjectionMatrix);
+		 Matrix4x4  zLineStartwvpMatrix = Multiply(zLineStartMatrix, viewProjectionMatrix);
+		 Matrix4x4  zLineEndwvpMatrix = Multiply(zLineEndMatrix, viewProjectionMatrix);
 		 //Screen変換
-		 Vector3 screenStart = ScreenTransform(Vector3{}, startwvpMatrix, viewportMatrix);
-		 Vector3 screenEnd = ScreenTransform(Vector3{}, endwvpMatrix, viewportMatrix);
+		 Vector3  zLineScreenStart = ScreenTransform(Vector3{}, zLineStartwvpMatrix, viewportMatrix);
+		 Vector3  zLineScreenEnd = ScreenTransform(Vector3{}, zLineEndwvpMatrix, viewportMatrix);
 		 
-		Novice::DrawLine(int(screenStart.x), int(screenEnd.z), int(screenStart.x), int(screenEnd.z),0xAAAAAAFF);
-	}
+		 if (xIndex==kSubdivision /2) {
+			 Novice::DrawLine(int(zLineScreenStart.x), int(zLineScreenStart.y), int(zLineScreenEnd.x), int(zLineScreenEnd.y), 0x000000FF);
+
+		 }
+		 else {
+			 Novice::DrawLine(int(zLineScreenStart.x), int(zLineScreenStart.y), int(zLineScreenEnd.x), int(zLineScreenEnd.y), 0xAAAAAAFF);
+		 }
+		}
 
 	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
+		//上の情報を使ってワールド座標系の始点と終点を求める
+		   // ワールド座標系でのグリッドの始点と終点を設定
+		xLineStart = Vector3(-kGridHalfWidth, 0, zIndex * kGridEvery - kGridHalfWidth);
+		xLineEnd = Vector3(kGridHalfWidth, 0, zIndex * kGridEvery - kGridHalfWidth);
 
+		//アフィン変換
+		Matrix4x4 	xLineStartMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineStart);
+		Matrix4x4 xLineEndMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineEnd);
+		//wvpMatrix
+		Matrix4x4 	xLineStartwvpMatrix = Multiply(xLineStartMatrix, viewProjectionMatrix);
+		Matrix4x4 xLineEndwvpMatrix = Multiply(xLineEndMatrix, viewProjectionMatrix);
+		//Screen変換
+		Vector3 xLineScreenStart = ScreenTransform(Vector3{}, xLineStartwvpMatrix, viewportMatrix);
+		Vector3 xLineScreenEnd = ScreenTransform(Vector3{}, xLineEndwvpMatrix, viewportMatrix);
+		if (zIndex == kSubdivision / 2) {
+			Novice::DrawLine(int(xLineScreenStart.x), int(xLineScreenStart.y), int(xLineScreenEnd.x), int(xLineScreenEnd.y), 0x000000FF);
+		}
+		else {
+			Novice::DrawLine(int(xLineScreenStart.x), int(xLineScreenStart.y), int(xLineScreenEnd.x), int(xLineScreenEnd.y), 0xAAAAAAFF);
+		}
 	}
-
 }
 
 
