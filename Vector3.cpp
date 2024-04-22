@@ -48,6 +48,16 @@ Vector3 Vector3:: operator*(const Vector3& obj) {
 
 }
 
+Vector3 Vector3:: operator*(const float& obj) {
+	Vector3 result;
+
+	result.x = x * obj;
+	result.y = y * obj;
+	result.z = z * obj;
+
+	return result;
+}
+
 Vector3 Vector3:: operator/(const Vector3& obj) {
 
 	Vector3 result;

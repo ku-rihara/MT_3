@@ -16,6 +16,7 @@ public:
     Vector3 operator-(const Vector3& obj);
 
     Vector3 operator*(const Vector3& obj);
+    Vector3 operator*(const float& obj);
 
     Vector3 operator/(const Vector3& obj);
 };
