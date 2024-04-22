@@ -31,8 +31,6 @@ Matrix4x4 MakeRotateYMatrix(float radian);
 //Z軸回転行列
 Matrix4x4 MakeRotateZMatrix(float radian);
 
-float Dot(const Vector3& v1, const Vector3& v2);
-
 Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3 translate);
 
 Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);
@@ -103,7 +101,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		else if (keys[DIK_D]) {
 			translate.x += 1.0f / 60.0f;
 		}
-		rotate.y += 0.1f;
+		rotate.y += 0.01f;
 
 		Matrix4x4 camelaMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, { 0.0f,0.0f,0.0f }, cameraPos);
 		Matrix4x4 viewMatrix = Inverse(camelaMatrix);
@@ -114,10 +112,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
 		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		float cross2 = Dot(cameraPos , Cross((screenVertices[1] - screenVertices[0]), (screenVertices[2] - screenVertices[1])));
-
 		///
-		/// 
 		/// ↑更新処理ここまで
 		///
 
@@ -128,12 +123,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Vector3 ndcVertex = Transform(klocalVertices[i], worldViewProjectionMatrix);
 			screenVertices[i] = Transform(ndcVertex, viewportMatrix);
 		}
-		if (cross2 <= 0) {
+		Vector3 cross2 = cameraPos * Cross((screenVertices[1] - screenVertices[0]), (screenVertices[2] - screenVertices[1]));
+		if (cross2.x <= 0 && cross2.y <= 0 && cross2.z <= 0) {
 			Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y), int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeSolid);
-		}
-		else {
-			Novice::DrawTriangle(int(screenVertices[0].x), int(screenVertices[0].y), int(screenVertices[1].x), int(screenVertices[1].y), int(screenVertices[2].x), int(screenVertices[2].y), RED, kFillModeWireFrame);
-
 		}
 
 
@@ -426,10 +418,4 @@ void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label) 
 	Novice::ScreenPrintf(x + kColumnWidth, y, "%.02f", vector.y);
 	Novice::ScreenPrintf(x + kColumnWidth * 2, y, "%.02f", vector.z);
 	Novice::ScreenPrintf(x + kColumnWidth * 3, y, "%s", label);
-}
-
-float Dot(const Vector3& v1, const Vector3& v2) {
-
-	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-
 }
