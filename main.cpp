@@ -17,6 +17,11 @@ struct Sphere {
 	float radius;//半径
 };
 
+struct Plane {
+	Vector3 normal;//法線
+	float distance;//距離
+};
+
 static const int kRowHeight = 20;
 static const int kColumnWidth = 60;
 static const int kWindowWidth = 1280;
@@ -58,6 +63,8 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix,const Matrix4x4& viewprtMatrix, uint32_t color);
 
 void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);
+
+bool IsCollision(const Sphere& s1, const Sphere& s2);
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -507,3 +514,6 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 	}
 }
 
+bool IsCollision(const Sphere& s1, const Sphere& s2) {
+	float distance=
+}
