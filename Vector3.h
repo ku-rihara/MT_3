@@ -19,5 +19,14 @@ public:
     Vector3 operator*(const float& obj);
 
     Vector3 operator/(const Vector3& obj);
+
+    //³‹K‰»
+    Vector3 Normalize(const Vector3& v);
+    //“àÏ
+    float Dot(const Vector3& v1, const Vector3& v2);
+    //’·‚³iƒmƒ‹ƒ€j
+    float Length(const Vector3& v);
+  
+    void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);
 };
 

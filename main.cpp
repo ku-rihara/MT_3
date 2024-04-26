@@ -64,7 +64,7 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix,cons
 
 void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);
 
-bool IsCollision(const Sphere& s1, const Sphere& s2);
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -465,55 +465,3 @@ void DrawGrid(const Matrix4x4 viewProjectionMatrix, const Matrix4x4& viewportMat
 	}
 }
 
-
-void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color) {
-	float pi = float(M_PI);
-	const uint32_t kSbudivision = 10;//分割数
-	const float kLatEvery = pi / kSbudivision;//緯度分割1つ分の角度
-	const float kLonEvery = (2* pi)/ kSbudivision;//経度分割1つ分の角度
-	//world座標系でのa,b,cを求める
-	Vector3 a, b, c;
-	//緯度の方向に分割　-π/2～π/2
-	for (uint32_t latindex = 0; latindex < kSbudivision; ++latindex) {
-		sphere;
-		float lat = -pi / 2.0f + kLatEvery * latindex;//現在の緯度
-		//経度の方向に分割0～2π
-		for (uint32_t lonIndex = 0; lonIndex < kSbudivision; ++lonIndex) {
-			float lon = lonIndex * kLonEvery;//現在の経度
-			// ワールド座標系での頂点を求める
-			 a = {
-				(sphere.center.x + sphere.radius)* (std::cos(lat)* std::cos(lon)),
-				(sphere.center.y + sphere.radius) * std::sin(lat),
-				(sphere.center.z + sphere.radius)* (std::cos(lat) * std::sin(lon))
-			};
-
-			 b = {
-				(sphere.center.x + sphere.radius)* (std::cos(lat + kLatEvery) * std::cos(lon)),
-				(sphere.center.y + sphere.radius)* std::sin(lat + kLatEvery),
-				(sphere.center.z + sphere.radius)* (std::cos(lat + kLatEvery) * std::sin(lon))
-			};
-
-			 c = {
-				(sphere.center.x + sphere.radius)* (std::cos(lat) * std::cos(lon + kLonEvery)),
-				(sphere.center.y + sphere.radius) * std::sin(lat),
-				(sphere.center.z + sphere.radius)* (std::cos(lat) * std::sin(lon + kLonEvery))
-			};
-			
-			Matrix4x4 MatrixA = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, a);
-			Matrix4x4 MatrixB = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, b);
-			Matrix4x4 MatrixC = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, c);
-			Matrix4x4 wvpMatrixA = Multiply(MatrixA, viewProjectionMatrix);
-			Matrix4x4 wvpMatrixB = Multiply(MatrixB, viewProjectionMatrix);
-			Matrix4x4 wvpMatrixC = Multiply(MatrixC, viewProjectionMatrix);
-			Vector3 screenA = ScreenTransform(Vector3{}, wvpMatrixA, viewprtMatrix);
-			Vector3 screenB = ScreenTransform(Vector3{}, wvpMatrixB, viewprtMatrix);
-			Vector3 screenC = ScreenTransform(Vector3{}, wvpMatrixC, viewprtMatrix);
-			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenB.x), int(screenB.y), color);
-			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenC.x), int(screenC.y), color);
-		}
-	}
-}
-
-bool IsCollision(const Sphere& s1, const Sphere& s2) {
-	float distance=
-}
