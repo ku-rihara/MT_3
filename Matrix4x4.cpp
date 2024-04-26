@@ -1,9 +1,38 @@
+#include<Novice.h>
 #include "Matrix4x4.h"
 #include<cmath>
 #include"assert.h"
 
 Matrix4x4::Matrix4x4() {
+	
+}
 
+Matrix4x4 Matrix4x4::operator+(const Matrix4x4& obj) {
+	Matrix4x4 result;
+
+	for (int row = 0; row < 4; ++row) {
+
+		for (int column = 0; column < 4; ++column) {
+
+			result.m[row][column] = m[row][column] + obj.m[row][column];
+		}
+	}
+
+	return result;
+}
+
+Matrix4x4 Matrix4x4::operator-(const Matrix4x4& obj) {
+	Matrix4x4 result;
+
+	for (int row = 0; row < 4; ++row) {
+
+		for (int column = 0; column < 4; ++column) {
+
+			result.m[row][column] = m[row][column] - obj.m[row][column];
+		}
+	}
+
+	return result;
 }
 
 Matrix4x4 Matrix4x4:: operator*(const Matrix4x4& obj) {
@@ -18,6 +47,42 @@ Matrix4x4 Matrix4x4:: operator*(const Matrix4x4& obj) {
 	}
 	return result;
 }
+
+Matrix4x4 Matrix4x4::Transpose(const Matrix4x4& m) {
+	Matrix4x4 result;
+
+	for (int row = 0; row < 4; row++) {
+		for (int column = 0; column < 4; column++) {
+			result.m[row][column] = m.m[column][row];
+
+		}
+	}
+	return result;
+}
+
+Matrix4x4 Matrix4x4::MakeIdentity4x4() {
+	Matrix4x4 result;
+
+	result.m[0][0] = 1.0f;
+	result.m[0][1] = 0.0f;
+	result.m[0][2] = 0.0f;
+	result.m[0][3] = 0.0f;
+	result.m[1][0] = 0.0f;
+	result.m[1][1] = 1.0f;
+	result.m[1][2] = 0.0f;
+	result.m[1][3] = 0.0f;
+	result.m[2][0] = 0.0f;
+	result.m[2][1] = 0.0f;
+	result.m[2][2] = 1.0f;
+	result.m[2][3] = 0.0f;
+	result.m[3][0] = 0.0f;
+	result.m[3][1] = 0.0f;
+	result.m[3][2] = 0.0f;
+	result.m[3][3] = 1.0f;
+
+	return result;
+}
+
 //•½sˆÚ“®s—ñ
 Matrix4x4 Matrix4x4::MakeTranslateMatrix(const Vector3& translate) {
 	Matrix4x4 result;
@@ -267,4 +332,13 @@ Vector3 Matrix4x4::ScreenTransform(const Vector3& local, const Matrix4x4& worldv
 	result = Transform(local, worldviewprojection);
 	result = Transform(result, viewport);
 	return result;
+}
+
+void Matrix4x4::MatrixScreenPrintf(int x, int y, Matrix4x4& matrix, const char* label) {
+	Novice::ScreenPrintf(x, y, "%s", label);
+	for (int row = 0; row < 4; ++row) {
+		for (int column = 0; column < 4; ++column) {
+			Novice::ScreenPrintf(x + column * kColumnWidth, y + (row + 1) * kRowHeight, "%6.02f", matrix.m[row][column]);
+		}
+	}
 }

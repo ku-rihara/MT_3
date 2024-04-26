@@ -16,6 +16,8 @@ public:
 
 	Matrix4x4 operator*(const Matrix4x4& obj);//積
 
+	Matrix4x4 Transpose(const Matrix4x4& m);//転置行列
+
 	Matrix4x4 MakeIdentity4x4();//単位行列
 
 	Matrix4x4 MakeTranslateMatrix(const Vector3& translate);//平行移動行列
@@ -41,6 +43,7 @@ public:
 	Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);//スクリーン変換
 	Vector3 ScreenTransform(const Vector3& local, const Matrix4x4& worldviewprojection, const Matrix4x4& viewport);
 
+	void MatrixScreenPrintf(int x, int y, Matrix4x4& matrix, const char* label);
 };
 
 
