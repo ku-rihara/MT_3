@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include"Vector3.h"
 
 class Matrix4x4 {
@@ -8,42 +8,41 @@ public:
 public:
 
 	Matrix4x4();
+	Matrix4x4(float a1,float a2,float a3, float a4,float b1, float b2, float b3,float b4, float c1, float c2, float c3,float c4, float d1, float d2, float d3, float d4);
 	/*Matrix4x4();*/
 
-	Matrix4x4 operator+(const Matrix4x4& obj);//‰ÁZ
+	Matrix4x4 operator+(const Matrix4x4& obj);//åŠ ç®—
 
-	Matrix4x4 operator-(const Matrix4x4& obj);//Œ¸Z
+	Matrix4x4 operator-(const Matrix4x4& obj);//æ¸›ç®—
 
-	Matrix4x4 operator*(const Matrix4x4& obj);//Ï
+	Matrix4x4 operator*(const Matrix4x4& obj);//ç©
 
-	Matrix4x4 Transpose(const Matrix4x4& m);//“]’us—ñ
+	static	Matrix4x4 Transpose(const Matrix4x4& m);//è»¢ç½®è¡Œåˆ—
 
-	Matrix4x4 MakeIdentity4x4();//’PˆÊs—ñ
+	static	Matrix4x4 MakeIdentity4x4();//å˜ä½è¡Œåˆ—
 
-	Matrix4x4 MakeTranslateMatrix(const Vector3& translate);//•½sˆÚ“®s—ñ
+	static	Matrix4x4 MakeTranslateMatrix(const Vector3& translate);//å¹³è¡Œç§»å‹•è¡Œåˆ—
 
-	Matrix4x4 MakeScaleMatrix(const Vector3& scale);//Šg‘åk¬s—ñ
+	static	Matrix4x4 MakeScaleMatrix(const Vector3& scale);//æ‹¡å¤§ç¸®å°è¡Œåˆ—
 
-	Matrix4x4 MakeRotateXMatrix(float radian);// X²‰ñ“]s—ñ
+	static	Matrix4x4 MakeRotateXMatrix(float radian);// Xè»¸å›è»¢è¡Œåˆ—
 
-	Matrix4x4 MakeRotateYMatrix(float radian);// Y²‰ñ“]s—ñ
+	static	Matrix4x4 MakeRotateYMatrix(float radian);// Yè»¸å›è»¢è¡Œåˆ—
 
-	Matrix4x4 MakeRotateZMatrix(float radian);// Z²‰ñ“]s—ñ
+	static	Matrix4x4 MakeRotateZMatrix(float radian);// Zè»¸å›è»¢è¡Œåˆ—
 
-	Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3 translate);//ƒAƒtƒBƒ“•ÏŠ·
+	static	Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate);//ã‚¢ãƒ•ã‚£ãƒ³å¤‰æ›
 
-	Matrix4x4 Inverse(const Matrix4x4& m);//‹ts—ñ
+	static	Matrix4x4 Inverse(const Matrix4x4& m);//é€†è¡Œåˆ—
 
-	Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip);//“§‹“Š‰es—ñ
+	static	Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip);//é€è¦–æŠ•å½±è¡Œåˆ—
 
-	Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip);//³Ë‰es—ñ
+	static	Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip);//æ­£å°„å½±è¡Œåˆ—
 
-	Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth);//ƒrƒ…[ƒ|[ƒgs—ñ
+	static	Matrix4x4 MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth);//ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆè¡Œåˆ—
 
-	Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);//ƒXƒNƒŠ[ƒ“•ÏŠ·
-	Vector3 ScreenTransform(const Vector3& local, const Matrix4x4& worldviewprojection, const Matrix4x4& viewport);
+	static	Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix);//ã‚¹ã‚¯ãƒªãƒ¼ãƒ³å¤‰æ›
+	static Vector3 ScreenTransform(const Vector3& local, const Matrix4x4& worldviewprojection, const Matrix4x4& viewport);
 
-	void MatrixScreenPrintf(int x, int y, Matrix4x4& matrix, const char* label);
+	static	void MatrixScreenPrintf(int x, int y, Matrix4x4& matrix, const char* label);
 };
-
-

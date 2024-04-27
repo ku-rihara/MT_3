@@ -1,4 +1,4 @@
-#include<Novice.h>
+Ôªø#include<Novice.h>
 #include "Vector3.h"
 #include<math.h>
 
@@ -100,22 +100,18 @@ Vector3 Vector3:: operator/(const Vector3& obj) {
 }
 
 
-//ì‡êœ
-float Vector3::Dot(const Vector3& v1, const Vector3& v2) {
-
+//ÂÜÖÁ©ç
+float Dot(const Vector3& v1, const Vector3& v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-
 }
 
-//í∑Ç≥ÅiÉmÉãÉÄÅj
-float Vector3::Length(const Vector3& v) {
-
-
+//Èï∑„ÅïÔºà„Éé„É´„É†Ôºâ
+float Length(const Vector3& v) {
 	return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-//ê≥ãKâª
-Vector3 Vector3::Normalize(const Vector3& v) {
+//Ê≠£Ë¶èÂåñ
+Vector3 Normalize(const Vector3& v) {
 	Vector3 result;
 
 	float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
@@ -132,7 +128,7 @@ Vector3 Vector3::Normalize(const Vector3& v) {
 	return result;
 }
 
-Vector3 Vector3::Cross(const Vector3& v1, const Vector3& v2) {
+Vector3 Cross(const Vector3& v1, const Vector3& v2) {
 	Vector3 result;
 
 	result.x = (v1.y * v2.z) - (v1.z * v2.y);
@@ -142,9 +138,9 @@ Vector3 Vector3::Cross(const Vector3& v1, const Vector3& v2) {
 }
 
 
-void Vector3::VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label) {
+void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label) {
 	Novice::ScreenPrintf(x, y, "%.02f", vector.x);
-	Novice::ScreenPrintf(x + kColumnWidth, y, "%.02f", vector.y);
-	Novice::ScreenPrintf(x + kColumnWidth * 2, y, "%.02f", vector.z);
-	Novice::ScreenPrintf(x + kColumnWidth * 3, y, "%s", label);
+	Novice::ScreenPrintf(int(x + kColumnWidth), y, "%.02f", vector.y);
+	Novice::ScreenPrintf(int(x + kColumnWidth * 2), y, "%.02f", vector.z);
+	Novice::ScreenPrintf(int(x + kColumnWidth * 3), y, "%s", label);
 }

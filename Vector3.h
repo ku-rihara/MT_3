@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 class Vector3{
 
 public:
@@ -19,16 +19,14 @@ public:
     Vector3 operator*(const float& obj);
 
     Vector3 operator/(const Vector3& obj);
-
-  
-    Vector3 Normalize(const Vector3& v);  //³‹K‰»
-  
-    Vector3 Cross(const Vector3& v1, const Vector3& v2);  //ƒNƒƒXÏ
-  
-    float Dot(const Vector3& v1, const Vector3& v2);  //“àÏ
- 
-    float Length(const Vector3& v);   //’·‚³iƒmƒ‹ƒ€j
-  
-    void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);
 };
 
+Vector3 Normnalize(const Vector3& v);  //æ­£è¦åŒ–
+
+Vector3 Cross(const Vector3& v1, const Vector3& v2);  //ã‚¯ãƒ­ã‚¹ç©
+
+float Dot(const Vector3& v1, const Vector3& v2);  //å†…ç©
+
+float Length(const Vector3& v);   //é•·ã•ï¼ˆãƒãƒ«ãƒ ï¼‰
+
+void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);

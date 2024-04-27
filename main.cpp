@@ -1,5 +1,4 @@
 #include <Novice.h>
-#define _USE_MATH_DEFINES
 #include<cmath>
 #include"Vector3.h"
 #include"Matrix4x4.h"
@@ -14,16 +13,11 @@ struct sement{
 	Vector3 diff;
 };
 
-static const int kRowHeight = 20;
-static const int kColumnWidth = 60;
 static const int kWindowWidth = 1280;
 static const int kWindowHeight = 720;
 
 
-void DrawGrid(const Matrix4x4 viewProjectionMatrix&, const Matrix4x4& viewportMatrix);
-
-void VectorScreenPrintf(int x, int y, const Vector3& vector, const char* label);
-
+void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
 
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -34,6 +28,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
+
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
@@ -54,11 +49,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 		ImGui::End();
-		Matrix4x4 camelaMatrix = MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
-		Matrix4x4 viewMatrix = Inverse(camelaMatrix);
-		Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
+		Matrix4x4 camelaMatrix = Matrix4x4::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
+		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
+		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
 		Matrix4x4 ViewProjectionMatrix =viewMatrix*projectionMatrix;
-		Matrix4x4 viewportMatrix = MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
+		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
 		///
 		/// ↑更新処理ここまで
@@ -102,14 +97,14 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 		zLineEnd = Vector3(xIndex * kGridEvery - kGridHalfWidth, 0, -kGridHalfWidth);
 
 		 //アフィン変換
-		 Matrix4x4  zLineStartMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineStart);
-		 Matrix4x4 zLineEndMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineEnd);
+		 Matrix4x4  zLineStartMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineStart);
+		 Matrix4x4 zLineEndMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineEnd);
 		 //wvpMatrix
-		 Matrix4x4  zLineStartwvpMatrix = Multiply(zLineStartMatrix, viewProjectionMatrix);
-		 Matrix4x4  zLineEndwvpMatrix = Multiply(zLineEndMatrix, viewProjectionMatrix);
+		 Matrix4x4  zLineStartwvpMatrix = zLineStartMatrix* viewProjectionMatrix;
+		 Matrix4x4  zLineEndwvpMatrix = zLineEndMatrix*viewProjectionMatrix;
 		 //Screen変換
-		 Vector3  zLineScreenStart = ScreenTransform(Vector3{}, zLineStartwvpMatrix, viewportMatrix);
-		 Vector3  zLineScreenEnd = ScreenTransform(Vector3{}, zLineEndwvpMatrix, viewportMatrix);
+		 Vector3  zLineScreenStart = Matrix4x4::ScreenTransform(Vector3{}, zLineStartwvpMatrix, viewportMatrix);
+		 Vector3  zLineScreenEnd = Matrix4x4::ScreenTransform(Vector3{}, zLineEndwvpMatrix, viewportMatrix);
 		 
 		 if (xIndex==kSubdivision /2) {
 			 Novice::DrawLine(int(zLineScreenStart.x), int(zLineScreenStart.y), int(zLineScreenEnd.x), int(zLineScreenEnd.y), 0x000000FF);
@@ -127,14 +122,14 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 		xLineEnd = Vector3(kGridHalfWidth, 0, zIndex * kGridEvery - kGridHalfWidth);
 
 		//アフィン変換
-		Matrix4x4 	xLineStartMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineStart);
-		Matrix4x4 xLineEndMatrix = MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineEnd);
+		Matrix4x4 	xLineStartMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineStart);
+		Matrix4x4 xLineEndMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineEnd);
 		//wvpMatrix
-		Matrix4x4 	xLineStartwvpMatrix = Multiply(xLineStartMatrix, viewProjectionMatrix);
-		Matrix4x4 xLineEndwvpMatrix = Multiply(xLineEndMatrix, viewProjectionMatrix);
+		Matrix4x4 	xLineStartwvpMatrix =xLineStartMatrix* viewProjectionMatrix;
+		Matrix4x4 xLineEndwvpMatrix =xLineEndMatrix* viewProjectionMatrix;
 		//Screen変換
-		Vector3 xLineScreenStart = ScreenTransform(Vector3{}, xLineStartwvpMatrix, viewportMatrix);
-		Vector3 xLineScreenEnd = ScreenTransform(Vector3{}, xLineEndwvpMatrix, viewportMatrix);
+		Vector3 xLineScreenStart = Matrix4x4::ScreenTransform(Vector3{}, xLineStartwvpMatrix, viewportMatrix);
+		Vector3 xLineScreenEnd = Matrix4x4::ScreenTransform(Vector3{}, xLineEndwvpMatrix, viewportMatrix);
 		if (zIndex == kSubdivision / 2) {
 			Novice::DrawLine(int(xLineScreenStart.x), int(xLineScreenStart.y), int(xLineScreenEnd.x), int(xLineScreenEnd.y), 0x000000FF);
 		}

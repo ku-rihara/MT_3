@@ -1,10 +1,35 @@
-#include<Novice.h>
+ï»¿#include<Novice.h>
 #include "Matrix4x4.h"
 #include<cmath>
 #include"assert.h"
 
+static const int kRowHeight = 20;
+static const int kColumnWidth = 60;
+
 Matrix4x4::Matrix4x4() {
-	
+	for (int row = 0; row < 4; ++row) {
+		for (int column = 0; column < 4; ++column) {
+			m[row][column] = 0;
+		}
+	}
+}	
+Matrix4x4::Matrix4x4(float a1, float a2, float a3, float a4, float b1, float b2, float b3, float b4, float c1, float c2, float c3, float c4, float d1, float d2, float d3, float d4) {
+	m[0][0] = a1;
+	m[0][1] = a2;
+	m[0][2] = a3;
+	m[0][3] = a4;
+	m[1][0] = b1;
+	m[1][1] = b2;
+	m[1][2] = b3;
+	m[1][3] = b4;
+	m[2][0] = c1;
+	m[2][1] = c2;
+	m[2][2] = c3;
+	m[2][3] = c4;
+	m[3][0] = d1;
+	m[3][1] = d2;
+	m[3][2] = d3;
+	m[3][3] = d4;
 }
 
 Matrix4x4 Matrix4x4::operator+(const Matrix4x4& obj) {
@@ -35,7 +60,7 @@ Matrix4x4 Matrix4x4::operator-(const Matrix4x4& obj) {
 	return result;
 }
 
-Matrix4x4 Matrix4x4:: operator*(const Matrix4x4& obj) {
+Matrix4x4   Matrix4x4::operator*(const Matrix4x4& obj) {
 	Matrix4x4 result;
 
 	for (int row = 0; row < 4; ++row) {
@@ -83,7 +108,7 @@ Matrix4x4 Matrix4x4::MakeIdentity4x4() {
 	return result;
 }
 
-//•½sˆÚ“®s—ñ
+//å¹³è¡Œç§»å‹•è¡Œåˆ—
 Matrix4x4 Matrix4x4::MakeTranslateMatrix(const Vector3& translate) {
 	Matrix4x4 result;
 	result.m[0][0] = 1.0f;
@@ -104,7 +129,7 @@ Matrix4x4 Matrix4x4::MakeTranslateMatrix(const Vector3& translate) {
 	result.m[3][3] = 1.0f;
 	return result;
 }
-//Šg‘åk¬s—ñ
+//æ‹¡å¤§ç¸®å°è¡Œåˆ—
 Matrix4x4 Matrix4x4::MakeScaleMatrix(const Vector3& scale) {
 	Matrix4x4 result;
 
@@ -127,7 +152,7 @@ Matrix4x4 Matrix4x4::MakeScaleMatrix(const Vector3& scale) {
 	return result;
 }
 
-//XŽ²‰ñ“]s—ñ
+//Xè»¸å›žè»¢è¡Œåˆ—
 Matrix4x4 Matrix4x4::MakeRotateXMatrix(float radian) {
 	Matrix4x4 result;
 	result.m[0][0] = 1;
@@ -149,7 +174,7 @@ Matrix4x4 Matrix4x4::MakeRotateXMatrix(float radian) {
 	return result;
 }
 
-//YŽ²‰ñ“]s—ñ
+//Yè»¸å›žè»¢è¡Œåˆ—
 Matrix4x4 Matrix4x4::MakeRotateYMatrix(float radian) {
 	Matrix4x4 result;
 	result.m[0][0] = std::cos(radian);
@@ -171,7 +196,7 @@ Matrix4x4 Matrix4x4::MakeRotateYMatrix(float radian) {
 	return result;
 }
 
-//ZŽ²‰ñ“]s—ñ
+//Zè»¸å›žè»¢è¡Œåˆ—
 Matrix4x4 Matrix4x4::MakeRotateZMatrix(float radian) {
 	Matrix4x4 result;
 	result.m[0][0] = std::cos(radian);
@@ -192,8 +217,8 @@ Matrix4x4 Matrix4x4::MakeRotateZMatrix(float radian) {
 	result.m[3][3] = 1;
 	return result;
 }
-//ƒAƒtƒBƒ“•ÏŠ·s—ñ
-Matrix4x4 Matrix4x4::MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3 translate) {
+//ã‚¢ãƒ•ã‚£ãƒ³å¤‰æ›è¡Œåˆ—
+Matrix4x4 Matrix4x4::MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
 	Matrix4x4 scaleMatrix;
 	Matrix4x4 rotateMatrix;
 	Matrix4x4 translateMatrix;
@@ -208,7 +233,7 @@ Matrix4x4 Matrix4x4::MakeAffineMatrix(const Vector3& scale, const Vector3& rotat
 	return result;
 }
 
-//‹ts—ñ
+//é€†è¡Œåˆ—
 Matrix4x4 Matrix4x4::Inverse(const Matrix4x4& m) {
 	float a = (m.m[0][0] * m.m[1][1] * m.m[2][2] * m.m[3][3]) + (m.m[0][0] * m.m[1][2] * m.m[2][3] * m.m[3][1]) + (m.m[0][0] * m.m[1][3] * m.m[2][1] * m.m[3][2])
 		- (m.m[0][0] * m.m[1][3] * m.m[2][2] * m.m[3][1]) - (m.m[0][0] * m.m[1][2] * m.m[2][1] * m.m[3][3]) - (m.m[0][0] * m.m[1][1] * m.m[2][3] * m.m[3][2])
@@ -244,7 +269,7 @@ Matrix4x4 Matrix4x4::Inverse(const Matrix4x4& m) {
 	return result;
 }
 
-//“§Ž‹“Š‰es—ñ
+//é€è¦–æŠ•å½±è¡Œåˆ—
 Matrix4x4 Matrix4x4::MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip) {
 	Matrix4x4 result;
 	result.m[0][0] = (1 / aspectRatio) * (1 / std::tan(fovY / 2));
@@ -266,7 +291,7 @@ Matrix4x4 Matrix4x4::MakePerspectiveFovMatrix(float fovY, float aspectRatio, flo
 	return result;
 }
 
-//³ŽË‰es—ñ
+//æ­£å°„å½±è¡Œåˆ—
 Matrix4x4 Matrix4x4::MakeOrthographicMatrix(float left, float top, float right, float bottom, float nearClip, float farClip) {
 	Matrix4x4 result;
 	result.m[0][0] = 2 / (right - left);
@@ -288,7 +313,7 @@ Matrix4x4 Matrix4x4::MakeOrthographicMatrix(float left, float top, float right, 
 	return result;
 }
 
-//ƒrƒ…[ƒ|[ƒgs—ñ
+//ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆè¡Œåˆ—
 Matrix4x4 Matrix4x4::MakeViewportMatrix(float left, float top, float width, float height, float minDepth, float maxDepth) {
 	Matrix4x4 result;
 	result.m[0][0] = width / 2;
