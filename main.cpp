@@ -8,9 +8,13 @@
 
 const char kWindowTitle[] = "LE2A_11_クリハラ_ケイタ_タイトル";
 
-struct sement{
+struct Segment{
 	Vector3 origin;
 	Vector3 diff;
+};
+
+struct Sphere {
+
 };
 
 static const int kWindowWidth = 1280;
@@ -18,6 +22,10 @@ static const int kWindowHeight = 720;
 
 
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
+
+Vector3 Project(const Vector3& v1, const Vector3 v2);
+
+Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 
 
 // Windowsアプリでのエントリーポイント(main関数)
@@ -139,3 +147,13 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 	}
 }
 
+Vector3 Project(const Vector3& v1, const Vector3 v2) {
+	float dot = Dot(v1, v2);
+	Vector3 normalizeB = Normnalize({ v2.x * v2.x, v2.y * v2.y, v2.z * v2.z });
+	return normalizeB * dot;
+	
+}
+
+Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
+	Vector3 cp = segment.origin;
+}
