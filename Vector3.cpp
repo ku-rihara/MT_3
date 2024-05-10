@@ -37,6 +37,7 @@ Vector3 Vector3:: operator-(const Vector3& obj) {
 
 	result.x = x - obj.x;
 	result.y = y - obj.y;
+	result.z = z - obj.z;
 
 	return result;
 

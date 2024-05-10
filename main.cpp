@@ -1,4 +1,5 @@
 #include <Novice.h>
+#define _USE_MATH_DEFINES
 #include<cmath>
 #include"Vector3.h"
 #include"Matrix4x4.h"
@@ -14,7 +15,8 @@ struct Segment{
 };
 
 struct Sphere {
-
+	Vector3 center;
+	float radius;
 };
 
 static const int kWindowWidth = 1280;
@@ -27,13 +29,16 @@ Vector3 Project(const Vector3& v1, const Vector3 v2);
 
 Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
-	
+	Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
+	Vector3 point{ -1.5f,0.6f,0.6f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
@@ -63,6 +68,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 ViewProjectionMatrix =viewMatrix*projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
+		Vector3 project = Project(point-segment.origin, segment.diff);
+		Vector3 closesPoint = ClosesPoint(point, segment);
+
+		Sphere pointSphere{ point,0.01f };
+		Sphere closesPointSphere{ closesPoint,0.01f };
+
 		///
 		/// ↑更新処理ここまで
 		///
@@ -71,6 +82,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
+		DrawSphere(pointSphere, ViewProjectionMatrix, viewportMatrix, RED);
+		DrawSphere(closesPointSphere, ViewProjectionMatrix, viewportMatrix, BLACK);
+
+		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
+		Vector3 end = Matrix4x4::ScreenTransform(segment.origin+segment.diff, ViewProjectionMatrix, viewportMatrix);
+		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
 		/// ↑描画処理ここまで
 		///
 
@@ -147,13 +164,63 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 	}
 }
 
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color) {
+	float pi = float(M_PI);
+	const uint32_t kSbudivision = 10;//分割数
+	const float kLatEvery = pi / kSbudivision;//緯度分割1つ分の角度
+	const float kLonEvery = (2 * pi) / kSbudivision;//経度分割1つ分の角度
+	//world座標系でのa,b,cを求める
+	Vector3 a, b, c;
+	//緯度の方向に分割　-π/2～π/2
+	for (uint32_t latindex = 0; latindex < kSbudivision; ++latindex) {
+		sphere;
+		float lat = -pi / 2.0f + kLatEvery * latindex;//現在の緯度
+		//経度の方向に分割0～2π
+		for (uint32_t lonIndex = 0; lonIndex < kSbudivision; ++lonIndex) {
+			float lon = lonIndex * kLonEvery;//現在の経度
+			// ワールド座標系での頂点を求める
+			a = {
+			   (sphere.center.x + sphere.radius) * (std::cos(lat) * std::cos(lon)),
+			   (sphere.center.y + sphere.radius) * std::sin(lat),
+			   (sphere.center.z + sphere.radius) * (std::cos(lat) * std::sin(lon))
+			};
+
+			b = {
+			   (sphere.center.x + sphere.radius) * (std::cos(lat + kLatEvery) * std::cos(lon)),
+			   (sphere.center.y + sphere.radius) * std::sin(lat + kLatEvery),
+			   (sphere.center.z + sphere.radius) * (std::cos(lat + kLatEvery) * std::sin(lon))
+			};
+
+			c = {
+			   (sphere.center.x + sphere.radius) * (std::cos(lat) * std::cos(lon + kLonEvery)),
+			   (sphere.center.y + sphere.radius) * std::sin(lat),
+			   (sphere.center.z + sphere.radius) * (std::cos(lat) * std::sin(lon + kLonEvery))
+			};
+
+			Matrix4x4 MatrixA = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, a);
+			Matrix4x4 MatrixB = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, b);
+			Matrix4x4 MatrixC = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, c);
+			Matrix4x4 wvpMatrixA = MatrixA*viewProjectionMatrix;
+			Matrix4x4 wvpMatrixB = MatrixB* viewProjectionMatrix;
+			Matrix4x4 wvpMatrixC = MatrixC* viewProjectionMatrix;
+			Vector3 screenA = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixA, viewprtMatrix);
+			Vector3 screenB = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixB, viewprtMatrix);
+			Vector3 screenC = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixC, viewprtMatrix);
+			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenB.x), int(screenB.y), color);
+			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenC.x), int(screenC.y), color);
+		}
+	}
+}
+
+
+
 Vector3 Project(const Vector3& v1, const Vector3 v2) {
 	float dot = Dot(v1, v2);
 	Vector3 normalizeB = Normnalize({ v2.x * v2.x, v2.y * v2.y, v2.z * v2.z });
 	return normalizeB * dot;
-	
 }
 
 Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
+	Vector3 a = { point.x - segment.origin.x,point.y - segment.origin.y,point.z - segment.origin.z };
 	Vector3 cp = segment.origin;
 }
