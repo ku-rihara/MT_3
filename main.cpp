@@ -33,7 +33,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
 	Sphere sphere1{ Vector3{},0.5f };
-	Sphere sphere2{ Vector3{1,0,1},0.2f };
+	Sphere sphere2{ Vector3{1,0,0},0.2f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
@@ -53,10 +53,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
+		
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
+		ImGui::DragFloat3("SphereCenter", &sphere1.center.x, 0.01f);
+		ImGui::DragFloat("SphereRadius", &sphere1.radius, 0.01f);
 		ImGui::End();
+
 		Matrix4x4 camelaMatrix = Matrix4x4::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
@@ -172,21 +176,21 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 			float lon = lonIndex * kLonEvery;//現在の経度
 			// ワールド座標系での頂点を求める
 			a = {
-			   (sphere.center.x + sphere.radius) * (std::cos(lat) * std::cos(lon)),
-			   (sphere.center.y + sphere.radius) * std::sin(lat),
-			   (sphere.center.z + sphere.radius) * (std::cos(lat) * std::sin(lon))
+			   (sphere.center.x + (sphere.radius * (std::cos(lat) * std::cos(lon)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat) * std::sin(lon))))
 			};
 
 			b = {
-			   (sphere.center.x + sphere.radius) * (std::cos(lat + kLatEvery) * std::cos(lon)),
-			   (sphere.center.y + sphere.radius) * std::sin(lat + kLatEvery),
-			   (sphere.center.z + sphere.radius) * (std::cos(lat + kLatEvery) * std::sin(lon))
+			   (sphere.center.x + (sphere.radius * (std::cos(lat + kLatEvery) * std::cos(lon)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat + kLatEvery))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat + kLatEvery) * std::sin(lon))))
 			};
 
 			c = {
-			   (sphere.center.x + sphere.radius) * (std::cos(lat) * std::cos(lon + kLonEvery)),
-			   (sphere.center.y + sphere.radius) * std::sin(lat),
-			   (sphere.center.z + sphere.radius) * (std::cos(lat) * std::sin(lon + kLonEvery))
+			   (sphere.center.x + (sphere.radius * (std::cos(lat) * std::cos(lon + kLonEvery)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat) * std::sin(lon + kLonEvery))))
 			};
 
 			Matrix4x4 MatrixA = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, a);
