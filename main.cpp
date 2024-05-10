@@ -9,10 +9,6 @@
 
 const char kWindowTitle[] = "LE2A_11_クリハラ_ケイタ_タイトル";
 
-struct Segment{
-	Vector3 origin;
-	Vector3 diff;
-};
 
 struct Sphere {
 	Vector3 center;
@@ -25,9 +21,7 @@ static const int kWindowHeight = 720;
 
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
 
-Vector3 Project(const Vector3& v1, const Vector3 v2);
-
-Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
+bool IsColligion(const Sphere& s1, const Sphere& s2);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
 
@@ -37,8 +31,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
-	Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
-	Vector3 point{ -1.5f,0.6f,0.6f };
+
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
@@ -68,11 +61,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 ViewProjectionMatrix =viewMatrix*projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		Vector3 project = Project(point-segment.origin, segment.diff);
-		Vector3 closesPoint = ClosesPoint(point, segment);
-
-		Sphere pointSphere{ point,0.01f };
-		Sphere closesPointSphere{ closesPoint,0.01f };
 
 		///
 		/// ↑更新処理ここまで
@@ -82,13 +70,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		DrawSphere(pointSphere, ViewProjectionMatrix, viewportMatrix, RED);
-		DrawSphere(closesPointSphere, ViewProjectionMatrix, viewportMatrix, BLACK);
-
-		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
-		Vector3 end = Matrix4x4::ScreenTransform(segment.origin+segment.diff, ViewProjectionMatrix, viewportMatrix);
-		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
-		/// ↑描画処理ここまで
+		
+			/// ↑描画処理ここまで
 		///
 
 		// フレームの終了
@@ -214,13 +197,13 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 
 
 
-Vector3 Project(const Vector3& v1, const Vector3 v2) {
-	float dot = Dot(v1, v2);
-	Vector3 normalizeB = Normnalize({ v2.x * v2.x, v2.y * v2.y, v2.z * v2.z });
-	return normalizeB * dot;
-}
-
-Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
-	Vector3 a = { point.x - segment.origin.x,point.y - segment.origin.y,point.z - segment.origin.z };
-	Vector3 cp = segment.origin;
-}
+//Vector3 Project(const Vector3& v1, const Vector3 v2) {
+//	float dot = Dot(v1, v2);
+//	Vector3 normalizeB = Normnalize({ v2.x * v2.x, v2.y * v2.y, v2.z * v2.z });
+//	return normalizeB * dot;
+//}
+//
+//Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
+//	Vector3 a = { point.x - segment.origin.x,point.y - segment.origin.y,point.z - segment.origin.z };
+//	Vector3 cp = segment.origin;
+//}
