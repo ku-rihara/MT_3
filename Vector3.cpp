@@ -31,7 +31,7 @@ Vector3 Vector3:: operator+(const Vector3& obj) {
 
 }
 
-Vector3 Vector3:: operator-(const Vector3& obj) {
+Vector3 Vector3::operator-(const Vector3& obj) {
 
 	Vector3 result;
 

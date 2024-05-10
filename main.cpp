@@ -32,6 +32,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
+	Sphere sphere1{ Vector3{},0.5f };
+	Sphere sphere2{ Vector3{1,0,1},0.2f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
@@ -70,6 +72,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
+		if (IsColligion(sphere1, sphere2) == true) {
+			DrawSphere(sphere1, ViewProjectionMatrix, viewportMatrix, RED);
+		}
+		else {
+			DrawSphere(sphere1, ViewProjectionMatrix, viewportMatrix, WHITE);
+		}
+		DrawSphere(sphere2, ViewProjectionMatrix, viewportMatrix, WHITE);
 		
 			/// ↑描画処理ここまで
 		///
@@ -192,6 +201,17 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenB.x), int(screenB.y), color);
 			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenC.x), int(screenC.y), color);
 		}
+	}
+}
+
+bool IsColligion(const Sphere& s1, const Sphere& s2) {
+
+	float distance = Length({ s2.center.x - s1.center.x,s2.center.y - s1.center.y,s2.center.z - s1.center.z });
+	if (distance <= s1.radius + s2.radius) {
+		return true;
+	}
+	else {
+		return  false;
 	}
 }
 
