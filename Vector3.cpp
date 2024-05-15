@@ -61,7 +61,7 @@ Vector3 Vector3:: operator*(const float& obj) {
 	result.x = x * obj;
 	result.y = y * obj;
 	result.z = z * obj;
-
+	
 	return result;
 }
 
@@ -112,7 +112,7 @@ float Length(const Vector3& v) {
 }
 
 //正規化
-Vector3 Normalize(const Vector3& v) {
+Vector3 Normnalize(const Vector3& v) {
 	Vector3 result;
 
 	float length = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);

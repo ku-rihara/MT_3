@@ -25,7 +25,7 @@ static const int kWindowHeight = 720;
 
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
 
-Vector3 Project(const Vector3& v1, const Vector3 v2);
+Vector3 Project(const Vector3& v1, const Vector3& v2);
 
 Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 
@@ -81,13 +81,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
+		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
+		Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
+		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
+
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
 		DrawSphere(pointSphere, ViewProjectionMatrix, viewportMatrix, RED);
 		DrawSphere(closesPointSphere, ViewProjectionMatrix, viewportMatrix, BLACK);
 
-		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
-		Vector3 end = Matrix4x4::ScreenTransform(segment.origin+segment.diff, ViewProjectionMatrix, viewportMatrix);
-		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
 		/// ↑描画処理ここまで
 		///
 
@@ -180,21 +181,21 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 			float lon = lonIndex * kLonEvery;//現在の経度
 			// ワールド座標系での頂点を求める
 			a = {
-			   (sphere.center.x + sphere.radius) * (std::cos(lat) * std::cos(lon)),
-			   (sphere.center.y + sphere.radius) * std::sin(lat),
-			   (sphere.center.z + sphere.radius) * (std::cos(lat) * std::sin(lon))
+			   (sphere.center.x + (sphere.radius * (std::cos(lat) * std::cos(lon)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat) * std::sin(lon))))
 			};
 
 			b = {
-			   (sphere.center.x + sphere.radius) * (std::cos(lat + kLatEvery) * std::cos(lon)),
-			   (sphere.center.y + sphere.radius) * std::sin(lat + kLatEvery),
-			   (sphere.center.z + sphere.radius) * (std::cos(lat + kLatEvery) * std::sin(lon))
-			};
-
-			c = {
-			   (sphere.center.x + sphere.radius) * (std::cos(lat) * std::cos(lon + kLonEvery)),
-			   (sphere.center.y + sphere.radius) * std::sin(lat),
-			   (sphere.center.z + sphere.radius) * (std::cos(lat) * std::sin(lon + kLonEvery))
+			   (sphere.center.x + (sphere.radius* (std::cos(lat + kLatEvery) * std::cos(lon)))),
+			   (sphere.center.y + (sphere.radius* std::sin(lat + kLatEvery))),
+			   (sphere.center.z + (sphere.radius* (std::cos(lat + kLatEvery) * std::sin(lon))))
+			};					  
+								  
+			c = {				  
+			   (sphere.center.x + (sphere.radius* (std::cos(lat) * std::cos(lon + kLonEvery)))),
+			   (sphere.center.y + (sphere.radius* std::sin(lat))),
+			   (sphere.center.z + (sphere.radius* (std::cos(lat) * std::sin(lon + kLonEvery))))
 			};
 
 			Matrix4x4 MatrixA = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, a);
@@ -214,13 +215,15 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 
 
 
-Vector3 Project(const Vector3& v1, const Vector3 v2) {
-	float dot = Dot(v1, v2);
-	Vector3 normalizeB = Normnalize({ v2.x * v2.x, v2.y * v2.y, v2.z * v2.z });
-	return normalizeB * dot;
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+	Vector3 normalizeB = Normnalize(v2);
+	float dot = Dot(v1, normalizeB);
+	return normalizeB*dot;
 }
 
 Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
-	Vector3 a = { point.x - segment.origin.x,point.y - segment.origin.y,point.z - segment.origin.z };
-	Vector3 cp = segment.origin;
+	
+	Vector3 projection = Project(Vector3(point.x - segment.origin.x, point.y - segment.origin.y, point.z - segment.origin.z), segment.diff);
+
+	return Vector3{ segment.origin.x + projection.x,segment.origin.y + projection.y,segment.origin.z + projection.z }; 
 }
