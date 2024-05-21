@@ -21,6 +21,8 @@ public:
 
 	static	Matrix4x4 MakeIdentity4x4();//単位行列
 
+	Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2);
+
 	static	Matrix4x4 MakeTranslateMatrix(const Vector3& translate);//平行移動行列
 
 	static	Matrix4x4 MakeScaleMatrix(const Vector3& scale);//拡大縮小行列

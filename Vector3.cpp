@@ -6,20 +6,9 @@
 const float kColumnWidth = 60;
 
 
-Vector3::Vector3() {
-	x = 0;
-	y = 0;
-	z = 0;
-}
-
-Vector3::Vector3(float numX, float numY,float numZ) {
-	x = numX;
-	y = numY;
-	z = numZ;
-}
 
 
-Vector3 Vector3:: operator+(const Vector3& obj) {
+Vector3 Vector3:: operator+(const Vector3& obj)  const {
 
 	Vector3 result;
 
@@ -31,7 +20,7 @@ Vector3 Vector3:: operator+(const Vector3& obj) {
 
 }
 
-Vector3 Vector3:: operator-(const Vector3& obj) {
+Vector3 Vector3:: operator-(const Vector3& obj) const{
 
 	Vector3 result;
 
@@ -43,7 +32,7 @@ Vector3 Vector3:: operator-(const Vector3& obj) {
 
 }
 
-Vector3 Vector3:: operator*(const Vector3& obj) {
+Vector3 Vector3:: operator*(const Vector3& obj) const {
 
 	Vector3 result;
 
@@ -55,7 +44,7 @@ Vector3 Vector3:: operator*(const Vector3& obj) {
 
 }
 
-Vector3 Vector3:: operator*(const float& obj) {
+Vector3 Vector3:: operator*(const float& obj)  const {
 	Vector3 result;
 
 	result.x = x * obj;
@@ -65,7 +54,7 @@ Vector3 Vector3:: operator*(const float& obj) {
 	return result;
 }
 
-Vector3 Vector3:: operator/(const Vector3& obj) {
+Vector3 Vector3:: operator/(const Vector3& obj)  const {
 
 	Vector3 result;
 
@@ -135,6 +124,14 @@ Vector3 Cross(const Vector3& v1, const Vector3& v2) {
 	result.x = (v1.y * v2.z) - (v1.z * v2.y);
 	result.y = (v1.z * v2.x) - (v1.x * v2.z);
 	result.z = (v1.x * v2.y) - (v1.y * v2.x);
+	return result;
+}
+
+Vector3 Multiply(const Vector3& v1, const float& v2) {
+	Vector3 result;
+	result.x = v1.x * v2;
+	result.y = v1.y * v2;
+	result.z = v1.z * v2;
 	return result;
 }
 

@@ -9,7 +9,7 @@
 
 const char kWindowTitle[] = "LE2A_11_クリハラ_ケイタ_タイトル";
 
-struct Segment{
+struct Segment {
 	Vector3 origin;
 	Vector3 diff;
 };
@@ -20,7 +20,7 @@ struct Sphere {
 };
 
 struct Plane {
-	Vector3 narmal;
+	Vector3 normal;
 	float distance;
 };
 
@@ -30,15 +30,14 @@ static const int kWindowHeight = 720;
 
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix);
 
-Vector3 Project(const Vector3& v1, const Vector3& v2);
-
-Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
-
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
 
 bool IsColligion(const Sphere& sphere, const Plane& plane);
 
 Vector3 Perpendicular(const Vector3& vector);
+
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -47,7 +46,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 	/*Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
 	Vector3 point{ -1.5f,0.6f,0.6f };*/
-	Plane plane;
+	Plane plane{ {0.0f,1.0f,0.0f},1.0f };
+	Sphere sphere{ {},0.2f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
@@ -70,15 +70,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
-		ImGui::DragFloat3("Plane.Normal", &.x, 0.01f);
+		ImGui::End();
+
+		ImGui::Begin("Sphere");
+		ImGui::DragFloat3("Sphere.center", &sphere.center.x, 0.01f);
+		ImGui::DragFloat("Sphere.radius", &sphere.radius, 0.01f);
+		ImGui::End();
+
+		ImGui::Begin("Plane");
+		ImGui::DragFloat3("Plane.Normal", &plane.normal.x, 0.01f);
+		plane.normal = Normnalize(plane.normal);
+		ImGui::DragFloat("Plane.Distance", &plane.distance, 0.01f);
 		ImGui::End();
 		Matrix4x4 camelaMatrix = Matrix4x4::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
-		Matrix4x4 ViewProjectionMatrix =viewMatrix*projectionMatrix;
+		Matrix4x4 ViewProjectionMatrix = viewMatrix * projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		
+
 
 		///
 		/// ↑更新処理ここまで
@@ -87,9 +97,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓描画処理ここから
 		///
-		
+
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		
+		if (IsColligion(sphere,plane)) {
+			DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, RED);
+		}
+		else {
+			DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, WHITE);
+		}
+		DrawPlane(plane, ViewProjectionMatrix, viewportMatrix, WHITE);
+
 		/// ↑描画処理ここまで
 		///
 
@@ -123,24 +140,24 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 		zLineStart = Vector3(xIndex * kGridEvery - kGridHalfWidth, 0, kGridHalfWidth);
 		zLineEnd = Vector3(xIndex * kGridEvery - kGridHalfWidth, 0, -kGridHalfWidth);
 
-		 //アフィン変換
-		 Matrix4x4  zLineStartMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineStart);
-		 Matrix4x4 zLineEndMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineEnd);
-		 //wvpMatrix
-		 Matrix4x4  zLineStartwvpMatrix = zLineStartMatrix* viewProjectionMatrix;
-		 Matrix4x4  zLineEndwvpMatrix = zLineEndMatrix*viewProjectionMatrix;
-		 //Screen変換
-		 Vector3  zLineScreenStart = Matrix4x4::ScreenTransform(Vector3{}, zLineStartwvpMatrix, viewportMatrix);
-		 Vector3  zLineScreenEnd = Matrix4x4::ScreenTransform(Vector3{}, zLineEndwvpMatrix, viewportMatrix);
-		 
-		 if (xIndex==kSubdivision /2) {
-			 Novice::DrawLine(int(zLineScreenStart.x), int(zLineScreenStart.y), int(zLineScreenEnd.x), int(zLineScreenEnd.y), 0x000000FF);
+		//アフィン変換
+		Matrix4x4  zLineStartMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineStart);
+		Matrix4x4 zLineEndMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, zLineEnd);
+		//wvpMatrix
+		Matrix4x4  zLineStartwvpMatrix = zLineStartMatrix * viewProjectionMatrix;
+		Matrix4x4  zLineEndwvpMatrix = zLineEndMatrix * viewProjectionMatrix;
+		//Screen変換
+		Vector3  zLineScreenStart = Matrix4x4::ScreenTransform(Vector3{}, zLineStartwvpMatrix, viewportMatrix);
+		Vector3  zLineScreenEnd = Matrix4x4::ScreenTransform(Vector3{}, zLineEndwvpMatrix, viewportMatrix);
 
-		 }
-		 else {
-			 Novice::DrawLine(int(zLineScreenStart.x), int(zLineScreenStart.y), int(zLineScreenEnd.x), int(zLineScreenEnd.y), 0xAAAAAAFF);
-		 }
+		if (xIndex == kSubdivision / 2) {
+			Novice::DrawLine(int(zLineScreenStart.x), int(zLineScreenStart.y), int(zLineScreenEnd.x), int(zLineScreenEnd.y), 0x000000FF);
+
 		}
+		else {
+			Novice::DrawLine(int(zLineScreenStart.x), int(zLineScreenStart.y), int(zLineScreenEnd.x), int(zLineScreenEnd.y), 0xAAAAAAFF);
+		}
+	}
 
 	for (uint32_t zIndex = 0; zIndex <= kSubdivision; ++zIndex) {
 		//上の情報を使ってワールド座標系の始点と終点を求める
@@ -152,8 +169,8 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 		Matrix4x4 	xLineStartMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineStart);
 		Matrix4x4 xLineEndMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, xLineEnd);
 		//wvpMatrix
-		Matrix4x4 	xLineStartwvpMatrix =xLineStartMatrix* viewProjectionMatrix;
-		Matrix4x4 xLineEndwvpMatrix =xLineEndMatrix* viewProjectionMatrix;
+		Matrix4x4 	xLineStartwvpMatrix = xLineStartMatrix * viewProjectionMatrix;
+		Matrix4x4 xLineEndwvpMatrix = xLineEndMatrix * viewProjectionMatrix;
 		//Screen変換
 		Vector3 xLineScreenStart = Matrix4x4::ScreenTransform(Vector3{}, xLineStartwvpMatrix, viewportMatrix);
 		Vector3 xLineScreenEnd = Matrix4x4::ScreenTransform(Vector3{}, xLineEndwvpMatrix, viewportMatrix);
@@ -188,23 +205,23 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 			};
 
 			b = {
-			   (sphere.center.x + (sphere.radius* (std::cos(lat + kLatEvery) * std::cos(lon)))),
-			   (sphere.center.y + (sphere.radius* std::sin(lat + kLatEvery))),
-			   (sphere.center.z + (sphere.radius* (std::cos(lat + kLatEvery) * std::sin(lon))))
-			};					  
-								  
-			c = {				  
-			   (sphere.center.x + (sphere.radius* (std::cos(lat) * std::cos(lon + kLonEvery)))),
-			   (sphere.center.y + (sphere.radius* std::sin(lat))),
-			   (sphere.center.z + (sphere.radius* (std::cos(lat) * std::sin(lon + kLonEvery))))
+			   (sphere.center.x + (sphere.radius * (std::cos(lat + kLatEvery) * std::cos(lon)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat + kLatEvery))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat + kLatEvery) * std::sin(lon))))
+			};
+
+			c = {
+			   (sphere.center.x + (sphere.radius * (std::cos(lat) * std::cos(lon + kLonEvery)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat) * std::sin(lon + kLonEvery))))
 			};
 
 			Matrix4x4 MatrixA = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, a);
 			Matrix4x4 MatrixB = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, b);
 			Matrix4x4 MatrixC = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, c);
-			Matrix4x4 wvpMatrixA = MatrixA*viewProjectionMatrix;
-			Matrix4x4 wvpMatrixB = MatrixB* viewProjectionMatrix;
-			Matrix4x4 wvpMatrixC = MatrixC* viewProjectionMatrix;
+			Matrix4x4 wvpMatrixA = MatrixA * viewProjectionMatrix;
+			Matrix4x4 wvpMatrixB = MatrixB * viewProjectionMatrix;
+			Matrix4x4 wvpMatrixC = MatrixC * viewProjectionMatrix;
 			Vector3 screenA = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixA, viewprtMatrix);
 			Vector3 screenB = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixB, viewprtMatrix);
 			Vector3 screenC = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixC, viewprtMatrix);
@@ -229,5 +246,36 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 //}
 
 Vector3 Perpendicular(const Vector3& vector) {
+	if (vector.x != 0.0f || vector.y != 0.0f) {
+		return{ -vector.y,vector.x,0.0f };
+	}
+	return { 0.0f,-vector.z,vector.y };
+}
+
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	Vector3 center = Multiply(plane.normal, plane.distance);
+	Vector3 perpendiculars[4];
+	perpendiculars[0] = Normnalize(Perpendicular(plane.normal));
+	perpendiculars[1] = { -perpendiculars[0].x,-perpendiculars[0].y,-perpendiculars[0].z };
+	perpendiculars[2] = Cross(plane.normal, perpendiculars[0]);
+	perpendiculars[3] = { -perpendiculars[2].x, -perpendiculars[2].y, -perpendiculars[2].z };
+
+	Vector3 points[4];
+	for (int32_t index = 0; index < 4; ++index) {
+		Vector3 extend = perpendiculars[index]*2.0f;
+		Vector3 point = center + extend;
+		points[index] = Matrix4x4::ScreenTransform(point, viewProjectionMatrix, viewportMatrix);
+	}
+
+	Novice::DrawLine(int(points[1].x), int(points[1].y), int(points[2].x), int(points[2].y), color);
+	Novice::DrawLine(int(points[2].x), int(points[2].y), int(points[0].x), int(points[0].y), color);
+	Novice::DrawLine(int(points[3].x), int(points[3].y), int(points[0].x), int(points[0].y), color);
+	Novice::DrawLine(int(points[3].x), int(points[3].y), int(points[1].x), int(points[1].y), color);
+
+}
+
+bool IsColligion(const Sphere&sphere, const Plane& plane) {
+	float distance= std::abs(Dot(plane.normal, sphere.center) - plane.distance);
+	return distance <= sphere.radius;
 
 }
