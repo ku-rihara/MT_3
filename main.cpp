@@ -52,6 +52,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Sphere sphere{ {},0.2f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
+	Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -101,12 +102,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		if (IsColligion(sphere,plane)) {
-			DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, RED);
-		}
-		else {
-			DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, WHITE);
-		}
+
 		DrawPlane(plane, ViewProjectionMatrix, viewportMatrix, WHITE);
 
 		/// ↑描画処理ここまで
@@ -281,6 +277,6 @@ bool IsColligion(const Sphere&sphere, const Plane& plane) {
 	return distance <= sphere.radius;
 
 }
-bool IsColligion(const Segment& sphere, const Plane& plane) {
-
-}
+//bool IsColligion(const Segment& sphere, const Plane& plane) {
+//
+//}
