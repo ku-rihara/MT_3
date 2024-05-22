@@ -34,6 +34,8 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 
 bool IsColligion(const Sphere& sphere, const Plane& plane);
 
+bool IsColligion(const Segment& sphere, const Plane& plane);
+
 Vector3 Perpendicular(const Vector3& vector);
 
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
@@ -277,5 +279,8 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 bool IsColligion(const Sphere&sphere, const Plane& plane) {
 	float distance= std::abs(Dot(plane.normal, sphere.center) - plane.distance);
 	return distance <= sphere.radius;
+
+}
+bool IsColligion(const Segment& sphere, const Plane& plane) {
 
 }
