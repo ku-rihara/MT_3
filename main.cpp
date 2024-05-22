@@ -34,7 +34,7 @@ void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, con
 
 bool IsColligion(const Sphere& sphere, const Plane& plane);
 
-bool IsColligion(const Segment& sphere, const Plane& plane);
+bool IsColligion(const Segment& segment, const Plane& plane);
 
 Vector3 Perpendicular(const Vector3& vector);
 
@@ -75,15 +75,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 		ImGui::End();
 
-		ImGui::Begin("Sphere");
-		ImGui::DragFloat3("Sphere.center", &sphere.center.x, 0.01f);
-		ImGui::DragFloat("Sphere.radius", &sphere.radius, 0.01f);
-		ImGui::End();
-
 		ImGui::Begin("Plane");
-		ImGui::DragFloat3("Plane.Normal", &plane.normal.x, 0.01f);
+		ImGui::DragFloat3("Plane.normal", &plane.normal.x, 0.01f);
 		plane.normal = Normnalize(plane.normal);
 		ImGui::DragFloat("Plane.Distance", &plane.distance, 0.01f);
+		ImGui::End();
+
+		ImGui::Begin("Segment");
+		ImGui::DragFloat3("Segment.Origin", &segment.origin.x,0.01f);
+		ImGui::DragFloat3("Segment.Diff", &segment.diff.x, 0.01f);
 		ImGui::End();
 		Matrix4x4 camelaMatrix = Matrix4x4::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
@@ -91,8 +91,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 ViewProjectionMatrix = viewMatrix * projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-
-
+		float dot = Dot(segment.diff, plane.normal);
+		//垂直=平行であるので、衝突しているはずがない
+		if (dot == 0.0f) {
+			return false;
+		}
+		//tを求める
+		float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+		Novice::ScreenPrintf(0, 0, "%f t=",t);
 		///
 		/// ↑更新処理ここまで
 		///
@@ -102,7 +108,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-
+		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
+		Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
+		if (IsColligion(segment, plane)) {
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), RED);
+		}
+		else {
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
+		}
 		DrawPlane(plane, ViewProjectionMatrix, viewportMatrix, WHITE);
 
 		/// ↑描画処理ここまで
@@ -277,6 +290,21 @@ bool IsColligion(const Sphere&sphere, const Plane& plane) {
 	return distance <= sphere.radius;
 
 }
-//bool IsColligion(const Segment& sphere, const Plane& plane) {
-//
-//}
+bool IsColligion(const Segment& segment, const Plane& plane) {
+	//まず垂直判定を行うために、法線と線の内積を求める
+	float dot = Dot(segment.diff,plane.normal);
+	//垂直=平行であるので、衝突しているはずがない
+	if (dot == 0.0f) {
+		return false;
+	}
+	//tを求める
+	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
+
+	//tの値と線の種類によって衝突しているかを判定する
+	if (t >= 0&&t <= 1) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
