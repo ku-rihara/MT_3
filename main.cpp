@@ -19,6 +19,9 @@ struct Sphere {
 	float radius;
 };
 
+struct Triangle {
+	Vector3 vertices[3];
+};
 struct Plane {
 	Vector3 normal;
 	float distance;
@@ -36,6 +39,10 @@ bool IsColligion(const Sphere& sphere, const Plane& plane);
 
 bool IsColligion(const Segment& segment, const Plane& plane);
 
+bool IsColligion(const Triangle& triangle, const Segment& segment);
+
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
 Vector3 Perpendicular(const Vector3& vector);
 
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
@@ -48,10 +55,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 	/*Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
 	Vector3 point{ -1.5f,0.6f,0.6f };*/
-	Plane plane{ {0.0f,1.0f,0.0f},1.0f };
-	Sphere sphere{ {},0.2f };
 	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
+	Triangle triangle;
+	triangle.vertices[0] = { -1.0f,0.0f,0.0f };
+	triangle.vertices[1] = { 0.0f,1.0f,0.0f };
+	triangle.vertices[2] = { 1.0f,0.0f,0.0f };
 	Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
 
 	// キー入力結果を受け取る箱
@@ -75,10 +84,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 		ImGui::End();
 
-		ImGui::Begin("Plane");
-		ImGui::DragFloat3("Plane.normal", &plane.normal.x, 0.01f);
-		plane.normal = Normnalize(plane.normal);
-		ImGui::DragFloat("Plane.Distance", &plane.distance, 0.01f);
+		ImGui::Begin("Triangle");
+		ImGui::DragFloat3("Triangle[0]", &triangle.vertices[0].x, 0.01f);
+		ImGui::DragFloat3("Triangle[1]", &triangle.vertices[1].x, 0.01f);
+		ImGui::DragFloat3("Triangle[2]", &triangle.vertices[2].x, 0.01f);
 		ImGui::End();
 
 		ImGui::Begin("Segment");
@@ -90,15 +99,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
 		Matrix4x4 ViewProjectionMatrix = viewMatrix * projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
-
-		float dot = Dot(segment.diff, plane.normal);
-		//垂直=平行であるので、衝突しているはずがない
-		if (dot == 0.0f) {
-			return false;
-		}
-		//tを求める
-		float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
-		Novice::ScreenPrintf(0, 0, "%f t=",t);
+	
 		///
 		/// ↑更新処理ここまで
 		///
@@ -110,14 +111,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
 		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
 		Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
-		if (IsColligion(segment, plane)) {
+		
 			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), RED);
-		}
-		else {
+		
 			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
-		}
-		DrawPlane(plane, ViewProjectionMatrix, viewportMatrix, WHITE);
 
+			DrawTriangle(triangle, ViewProjectionMatrix, viewportMatrix, WHITE);
+		
 		/// ↑描画処理ここまで
 		///
 
@@ -285,6 +285,19 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 
 }
 
+void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	
+	Vector3 screen[3];
+	for (int i = 0; i < 3; i++) {
+		Matrix4x4 Matrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, {}, triangle.vertices[i]);
+		Matrix4x4 wvpMatrix = Matrix * viewProjectionMatrix;
+		screen[i] = Matrix4x4::ScreenTransform( Vector3{},wvpMatrix,viewportMatrix );
+	}
+	Novice::DrawTriangle(int(screen[0].x), int(screen[0].y), int(screen[1].x), int(screen[1].y), int(screen[2].x), int(screen[2].y), color, kFillModeWireFrame);
+
+
+}
+
 bool IsColligion(const Sphere&sphere, const Plane& plane) {
 	float distance= std::abs(Dot(plane.normal, sphere.center) - plane.distance);
 	return distance <= sphere.radius;
@@ -307,4 +320,15 @@ bool IsColligion(const Segment& segment, const Plane& plane) {
 	else {
 		return false;
 	}
+}
+
+bool IsColligion(const Triangle& triangle, const Segment& segment) {
+	Vector3 triangleNormal = Normnalize();
+	float dot = Dot(segment.diff, triangleNormal);
+	if (dot == 0.0f) {
+		return false;
+	}
+	//tを求める
+	float t=()
+	Vector3 cross01=Cross(triangle.vertices[0],segment.origin)
 }
