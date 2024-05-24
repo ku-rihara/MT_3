@@ -288,7 +288,7 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 bool IsColligion(const Sphere&sphere, const Plane& plane) {
 	float distance= std::abs(Dot(plane.normal, sphere.center) - plane.distance);
 	return distance <= sphere.radius;
-	//kjhdlfkhflja dfalf afhldk jlf ha fh fl
+	//
 }
 bool IsColligion(const Segment& segment, const Plane& plane) {
 	//まず垂直判定を行うために、法線と線の内積を求める
