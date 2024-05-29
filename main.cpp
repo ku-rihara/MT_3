@@ -55,13 +55,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Initialize(kWindowTitle, 1280, 720);
 	/*Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
 	Vector3 point{ -1.5f,0.6f,0.6f };*/
-	Vector3 cameraTranslate{ 0.0f,1.9f,-6.49f };
+	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	Triangle triangle;
 	triangle.vertices[0] = { -1.0f,0.0f,0.0f };
 	triangle.vertices[1] = { 0.0f,1.0f,0.0f };
 	triangle.vertices[2] = { 1.0f,0.0f,0.0f };
-	Segment segment{ {-2.0f,-1.0f,0.0f},{3.0f,2.0f,2.0f} };
+	Segment segment{ {-2.0f,0.3f,0.0f},{1.0f,1.0f,1.0f} };
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -81,6 +81,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
+		Matrix4x4 camelaMatrix = Matrix4x4::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, {}, cameraTranslate);
+		 camelaMatrix = camelaMatrix*Matrix4x4::MakeRotateXMatrix(cameraRotate.x);
+		 camelaMatrix = camelaMatrix*Matrix4x4::MakeRotateYMatrix(cameraRotate.y);
+		 camelaMatrix = camelaMatrix * Matrix4x4::MakeRotateZMatrix(cameraRotate.z);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 		ImGui::End();
 
@@ -91,15 +95,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::End();
 
 		ImGui::Begin("Segment");
-		ImGui::DragFloat3("Segment.Origin", &segment.origin.x,0.01f);
+		ImGui::DragFloat3("Segment.Origin", &segment.origin.x, 0.01f);
 		ImGui::DragFloat3("Segment.Diff", &segment.diff.x, 0.01f);
 		ImGui::End();
-		Matrix4x4 camelaMatrix = Matrix4x4::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, cameraRotate, cameraTranslate);
+		
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
 		Matrix4x4 ViewProjectionMatrix = viewMatrix * projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
-	
+
+
 		///
 		/// ↑更新処理ここまで
 		///
@@ -111,13 +116,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
 		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
 		Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
-		
-			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), RED);
-		
-			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
 
-			DrawTriangle(triangle, ViewProjectionMatrix, viewportMatrix, WHITE);
-		
+		if (IsColligion(triangle, segment)) {
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), RED);
+		}
+		else {
+
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
+		}
+		DrawTriangle(triangle, ViewProjectionMatrix, viewportMatrix, WHITE);
+
 		/// ↑描画処理ここまで
 		///
 
@@ -273,7 +281,7 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 
 	Vector3 points[4];
 	for (int32_t index = 0; index < 4; ++index) {
-		Vector3 extend = perpendiculars[index]*2.0f;
+		Vector3 extend = perpendiculars[index] * 2.0f;
 		Vector3 point = center + extend;
 		points[index] = Matrix4x4::ScreenTransform(point, viewProjectionMatrix, viewportMatrix);
 	}
@@ -286,26 +294,26 @@ void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const 
 }
 
 void DrawTriangle(const Triangle& triangle, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-	
+
 	Vector3 screen[3];
 	for (int i = 0; i < 3; i++) {
 		Matrix4x4 Matrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, {}, triangle.vertices[i]);
 		Matrix4x4 wvpMatrix = Matrix * viewProjectionMatrix;
-		screen[i] = Matrix4x4::ScreenTransform( Vector3{},wvpMatrix,viewportMatrix );
+		screen[i] = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrix, viewportMatrix);
 	}
 	Novice::DrawTriangle(int(screen[0].x), int(screen[0].y), int(screen[1].x), int(screen[1].y), int(screen[2].x), int(screen[2].y), color, kFillModeWireFrame);
 
 
 }
 
-bool IsColligion(const Sphere&sphere, const Plane& plane) {
-	float distance= std::abs(Dot(plane.normal, sphere.center) - plane.distance);
+bool IsColligion(const Sphere& sphere, const Plane& plane) {
+	float distance = std::abs(Dot(plane.normal, sphere.center) - plane.distance);
 	return distance <= sphere.radius;
 	//
 }
 bool IsColligion(const Segment& segment, const Plane& plane) {
 	//まず垂直判定を行うために、法線と線の内積を求める
-	float dot = Dot(segment.diff,plane.normal);
+	float dot = Dot(segment.diff, plane.normal);
 	//垂直=平行であるので、衝突しているはずがない
 	if (dot == 0.0f) {
 		return false;
@@ -314,7 +322,7 @@ bool IsColligion(const Segment& segment, const Plane& plane) {
 	float t = (plane.distance - Dot(segment.origin, plane.normal)) / dot;
 
 	//tの値と線の種類によって衝突しているかを判定する
-	if (t >= 0&&t <= 1) {
+	if (t >= 0 && t <= 1) {
 		return true;
 	}
 	else {
@@ -323,12 +331,41 @@ bool IsColligion(const Segment& segment, const Plane& plane) {
 }
 
 bool IsColligion(const Triangle& triangle, const Segment& segment) {
-	Vector3 triangleNormal = Normnalize();
-	float dot = Dot(segment.diff, triangleNormal);
+
+	//三角形から平面を作る
+	Vector3 v1 = triangle.vertices[1]- triangle.vertices[0];
+	Vector3 v2 = triangle.vertices[2]- triangle.vertices[1];
+	Vector3 cross = Cross(v1, v2);
+	 cross = Normnalize(cross);
+	Vector3 Ncross = Normnalize(cross);
+	float distance = Dot(triangle.vertices[0], Ncross);
+	float dot = Dot(segment.diff, Ncross);
 	if (dot == 0.0f) {
 		return false;
 	}
-	//tを求める
-	float t=()
-	Vector3 cross01=Cross(triangle.vertices[0],segment.origin)
+	float t = (distance - Dot(segment.origin, Ncross)) / dot;
+	Vector3 p; 
+	p.x= segment.origin.x + t * segment.diff.x;
+	p.y = segment.origin.y + t * segment.diff.y;
+	p.z = segment.origin.z + t * segment.diff.z;
+
+	//各辺を結んだベクトルと、頂点と衝突点pを結んだベクトルのクロス積を取る
+	Vector3 cross01 = Cross(triangle.vertices[1] -triangle.vertices[0], p-triangle.vertices[1]);
+	Vector3 cross12 = Cross(triangle.vertices[2] - triangle.vertices[1],p-  triangle.vertices[2]);
+	Vector3 cross20 = Cross(triangle.vertices[0] - triangle.vertices[2], p- triangle.vertices[0]);
+	
+	if (t >= 0&& t <= 1) {
+		//全ての小三角形のクロス
+		if (Dot(cross01, Ncross) >= 0.0f &&
+			Dot(cross12, Ncross) >= 0.0f &&
+			Dot(cross20, Ncross) >= 0.0f) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+	
+		return false;
+	
 }
