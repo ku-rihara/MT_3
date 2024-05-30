@@ -311,6 +311,18 @@ bool IsColligion(const Sphere& sphere, const Plane& plane) {
 	return distance <= sphere.radius;
 	//
 }
+////三角形から平面を作る
+//Vector3 v1 =b-a;
+//Vector3 v2 = c-b;
+//Vector3 cross = v1,v2のクロス積しょうま;
+//
+//Vector3 Ncross = Normnalize(cross);
+//float distance = Dot(triangle.vertices[0], Ncross);
+//float dot = Dot(segment.diff, Ncross);
+//if (dot == 0.0f) {
+//	return false;
+//}
+//float t = (distance - Dot(segment.origin, Ncross)) / dot;
 bool IsColligion(const Segment& segment, const Plane& plane) {
 	//まず垂直判定を行うために、法線と線の内積を求める
 	float dot = Dot(segment.diff, plane.normal);
@@ -336,7 +348,7 @@ bool IsColligion(const Triangle& triangle, const Segment& segment) {
 	Vector3 v1 = triangle.vertices[1]- triangle.vertices[0];
 	Vector3 v2 = triangle.vertices[2]- triangle.vertices[1];
 	Vector3 cross = Cross(v1, v2);
-	 cross = Normnalize(cross);
+	
 	Vector3 Ncross = Normnalize(cross);
 	float distance = Dot(triangle.vertices[0], Ncross);
 	float dot = Dot(segment.diff, Ncross);
@@ -369,3 +381,4 @@ bool IsColligion(const Triangle& triangle, const Segment& segment) {
 		return false;
 	
 }
+
