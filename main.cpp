@@ -43,6 +43,7 @@ Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 
 bool IsCollision(const AABB& aabb, const Sphere& sphere);
 
+bool IsCollision(const AABB& aabb, const Segment& segment);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
 
@@ -56,15 +57,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
-	Sphere sphere{
-		.center{1.0f,1.0f,1.0f},
-		.radius{1.0f},
-	};
+
 	AABB aabb1{
 		.min{-0.5f,-0.5f,-0.5f},
 		.max{0.0f,0.0f,0.0f},
 	};
-	
+	Segment segment{
+		.origin{-0.7f,-0.5f,-0.5f},
+		.diff{2.0f,-0.5f,0.0f},
+	};
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -103,8 +104,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::End();
 
 		ImGui::Begin("Sphere");
-		ImGui::DragFloat3("center", &sphere.center.x, 0.01f);
-		ImGui::DragFloat("radius", &sphere.radius, 0.01f);
+		
 		ImGui::End();
 
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
@@ -123,7 +123,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
 
-		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix,WHITE);
+		
 
 		if (IsCollision(aabb1,sphere )) {
 			DrawAABB(aabb1, ViewProjectionMatrix, viewportMatrix, RED);
