@@ -1,6 +1,7 @@
 #include <Novice.h>
 #define _USE_MATH_DEFINES
 #include<cmath>
+#include<algorithm>
 #include"Vector3.h"
 #include"Matrix4x4.h"
 #include<assert.h>
@@ -8,6 +9,11 @@
 
 
 const char kWindowTitle[] = "LE2A_11_クリハラ_ケイタ_タイトル";
+
+struct Sphere {
+	Vector3 center;
+	float radius;
+};
 
 struct Segment {
 	Vector3 origin;
@@ -35,6 +41,11 @@ Vector3 Project(const Vector3& v1, const Vector3& v2);
 	
 Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 
+bool IsCollision(const AABB& aabb, const Sphere& sphere);
+
+
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -45,14 +56,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
+	Sphere sphere{
+		.center{1.0f,1.0f,1.0f},
+		.radius{1.0f},
+	};
 	AABB aabb1{
 		.min{-0.5f,-0.5f,-0.5f},
 		.max{0.0f,0.0f,0.0f},
 	};
-	AABB aabb2{
-		.min{0.2f,0.2f,0.2f},
-		.max{1.0f,1.0f,1.0f},
-	};
+	
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -90,15 +102,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("aabb1Min", &aabb1.min.x, 0.01f);
 		ImGui::End();
 
-		ImGui::Begin("aabb2");
-		ImGui::DragFloat3("aabb2Max", &aabb2.max.x, 0.01f);
-		ImGui::DragFloat3("aabb2Min", &aabb2.min.x, 0.01f);
-		aabb2.min.x = (std::min)(aabb2.min.x, aabb2.max.x);
-		aabb2.max.x = (std::max)(aabb2.min.x, aabb2.max.x);
-		aabb2.min.y = (std::min)(aabb2.min.y, aabb2.max.y);
-		aabb2.max.y = (std::max)(aabb2.min.y, aabb2.max.y);
-		aabb2.min.z = (std::min)(aabb2.min.z, aabb2.max.z);
-		aabb2.max.z = (std::max)(aabb2.min.z, aabb2.max.z);
+		ImGui::Begin("Sphere");
+		ImGui::DragFloat3("center", &sphere.center.x, 0.01f);
+		ImGui::DragFloat("radius", &sphere.radius, 0.01f);
 		ImGui::End();
 
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
@@ -117,14 +123,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
 
-		if (IsCollision(aabb1, aabb2)) {
+		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix,WHITE);
+
+		if (IsCollision(aabb1,sphere )) {
 			DrawAABB(aabb1, ViewProjectionMatrix, viewportMatrix, RED);
 		}
 		else {
 			DrawAABB(aabb1, ViewProjectionMatrix, viewportMatrix, WHITE);
 		}
 
-		DrawAABB(aabb2, ViewProjectionMatrix, viewportMatrix, WHITE);
 
 		/// ↑描画処理ここまで
 		///
@@ -202,6 +209,54 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 	}
 }
 
+void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color) {
+	float pi = float(M_PI);
+	const uint32_t kSbudivision = 10;//分割数
+	const float kLatEvery = pi / kSbudivision;//緯度分割1つ分の角度
+	const float kLonEvery = (2 * pi) / kSbudivision;//経度分割1つ分の角度
+	//world座標系でのa,b,cを求める
+	Vector3 a, b, c;
+	//緯度の方向に分割　-π/2～π/2
+	for (uint32_t latindex = 0; latindex < kSbudivision; ++latindex) {
+		sphere;
+		float lat = -pi / 2.0f + kLatEvery * latindex;//現在の緯度
+		//経度の方向に分割0～2π
+		for (uint32_t lonIndex = 0; lonIndex < kSbudivision; ++lonIndex) {
+			float lon = lonIndex * kLonEvery;//現在の経度
+			// ワールド座標系での頂点を求める
+			a = {
+			   (sphere.center.x + (sphere.radius * (std::cos(lat) * std::cos(lon)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat) * std::sin(lon))))
+			};
+
+			b = {
+			   (sphere.center.x + (sphere.radius * (std::cos(lat + kLatEvery) * std::cos(lon)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat + kLatEvery))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat + kLatEvery) * std::sin(lon))))
+			};
+
+			c = {
+			   (sphere.center.x + (sphere.radius * (std::cos(lat) * std::cos(lon + kLonEvery)))),
+			   (sphere.center.y + (sphere.radius * std::sin(lat))),
+			   (sphere.center.z + (sphere.radius * (std::cos(lat) * std::sin(lon + kLonEvery))))
+			};
+
+			Matrix4x4 MatrixA = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, a);
+			Matrix4x4 MatrixB = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, b);
+			Matrix4x4 MatrixC = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, c);
+			Matrix4x4 wvpMatrixA = MatrixA * viewProjectionMatrix;
+			Matrix4x4 wvpMatrixB = MatrixB * viewProjectionMatrix;
+			Matrix4x4 wvpMatrixC = MatrixC * viewProjectionMatrix;
+			Vector3 screenA = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixA, viewprtMatrix);
+			Vector3 screenB = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixB, viewprtMatrix);
+			Vector3 screenC = Matrix4x4::ScreenTransform(Vector3{}, wvpMatrixC, viewprtMatrix);
+			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenB.x), int(screenB.y), color);
+			Novice::DrawLine(int(screenA.x), int(screenA.y), int(screenC.x), int(screenC.y), color);
+		}
+	}
+}
+
 
 Vector3 Perpendicular(const Vector3& vector) {
 	if (vector.x != 0.0f || vector.y != 0.0f) {
@@ -275,4 +330,18 @@ Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
 	Vector3 projection = Project(Vector3(point.x - segment.origin.x, point.y - segment.origin.y, point.z - segment.origin.z), segment.diff);
 
 	return Vector3{ segment.origin.x + projection.x,segment.origin.y + projection.y,segment.origin.z + projection.z }; 
+}
+
+bool IsCollision(const AABB& aabb, const Sphere& sphere) {
+	//最近接点を求める
+	Vector3 closesPoint{ std::clamp(sphere.center.x,aabb.min.x,aabb.max.x),std::clamp(sphere.center.y,aabb.min.y,aabb.max.y),std::clamp(sphere.center.z,aabb.min.z,aabb.max.z) };
+	//最近接点と球の中心との距離を求める
+	float distance = Length(closesPoint - sphere.center);
+	//距離が半径よりも小さければ衝突
+	if (distance <= sphere.radius) {
+		return true;
+	}
+	else {
+		return false;
+	}
 }
