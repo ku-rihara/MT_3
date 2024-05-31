@@ -9,7 +9,10 @@
 
 const char kWindowTitle[] = "LE2A_11_クリハラ_ケイタ_タイトル";
 
-
+struct Segment {
+	Vector3 origin;
+	Vector3 diff;
+};
 
 struct AABB {
 	Vector3 min;
@@ -27,6 +30,11 @@ Vector3 Perpendicular(const Vector3& vector);
 bool IsCollision(const AABB& aabb1, const AABB& aabb2);
 
 void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
+
+Vector3 Project(const Vector3& v1, const Vector3& v2);
+	
+Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
+
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -254,4 +262,17 @@ void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Mat
 
 
 
+}
+
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+	Vector3 normalizeB = Normnalize(v2);
+	float dot = Dot(v1, normalizeB);
+	return normalizeB*dot;
+}
+
+Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
+	
+	Vector3 projection = Project(Vector3(point.x - segment.origin.x, point.y - segment.origin.y, point.z - segment.origin.z), segment.diff);
+
+	return Vector3{ segment.origin.x + projection.x,segment.origin.y + projection.y,segment.origin.z + projection.z }; 
 }
