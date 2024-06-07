@@ -72,7 +72,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		.orientations = {{1.0f,0.0f,0.0f},
 					   { 0.0f,1.0f,0.0f},
 					   {0.0f,0.0f,1.0f}},
-					   .size{0.5f,0.5f,0.5f} 
+					   .size{0.5f,0.5f,0.5f}
 	};
 
 	Sphere sphere{
@@ -116,7 +116,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("aabb1Min", &aabb1.min.x, 0.01f);*/
 		ImGui::End();
 
-		ImGui::Begin("Segment");
+		ImGui::Begin("OBB");
 		//回転行列を生成
 		Matrix4x4 OBBWorldMatrix = Matrix4x4::MakeAffineMatrix({ 1,1,1 }, {}, obb.center);
 		Matrix4x4 InverseOBBWorldMatrix = Matrix4x4::Inverse(OBBWorldMatrix);
@@ -133,9 +133,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		obb.orientations[2].x = rotateMatrix.m[2][0];
 		obb.orientations[2].y = rotateMatrix.m[2][1];
 		obb.orientations[2].z = rotateMatrix.m[2][2];
+		for (int i = 0; i < 3; i++) {
+			obb.orientations[i] = Normnalize(obb.orientations[i]);
+		}
 		ImGui::End();
 
-		Vector3 centerInOBBLocalSphere = Matrix4x4::Transform(sphere.center,InverseOBBWorldMatrix );
+		Vector3 centerInOBBLocalSphere = Matrix4x4::Transform(sphere.center, InverseOBBWorldMatrix);
 
 		AABB aabbOBBLocal{ .min{-obb.size.x,-obb.size.y,-obb.size.z},.max{obb.size.x,obb.size.y,obb.size.z} };
 		Sphere sphereOBBLocal{ centerInOBBLocalSphere,sphere.radius };
@@ -155,15 +158,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-	/*	Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
-		Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
-		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);*/
-		//ローカル空間で当たり判定
+		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, WHITE);
+		/*	Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
+			Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);*/
+			//ローカル空間で当たり判定
 		if (IsCollision(aabbOBBLocal, sphereOBBLocal)) {
-			DrawAABB(aabb1, ViewProjectionMatrix, viewportMatrix, RED);
+			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, RED);
 		}
 		else {
-			DrawAABB(aabb1, ViewProjectionMatrix, viewportMatrix, WHITE);
+			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, WHITE);
 		}
 
 
@@ -383,6 +387,44 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere) {
 //bool IsCollision(const OBB& obb, const Sphere& sphere);
 
 void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
-	
+
+
+	Vector3 verticies[8];
+	Vector3 verticiesScreen[8];
+	//上の面
+	verticies[0] = { obb.center.x - obb.size.x,obb.center.y + obb.size.y ,obb.center.z + obb.size.z };//左奥
+	verticies[1] = { obb.center.x + obb.size.x,obb.center.y + obb.size.y ,obb.center.z + obb.size.z };//右奥
+	verticies[2] = { obb.center.x - obb.size.x,obb.center.y + obb.size.y ,obb.center.z - obb.size.z };//左手前
+	verticies[3] = { obb.center.x + obb.size.x,obb.center.y + obb.size.y ,obb.center.z - obb.size.z };//右手前
+	//下の面		   	obb.
+	verticies[4] = { obb.center.x - obb.size.x,obb.center.y - obb.size.y ,obb.center.z + obb.size.z }; //左奥
+	verticies[5] = { obb.center.x + obb.size.x,obb.center.y - obb.size.y ,obb.center.z + obb.size.z }; //右奥
+	verticies[6] = { obb.center.x - obb.size.x,obb.center.y - obb.size.y ,obb.center.z - obb.size.z };///左手前
+	verticies[7] = { obb.center.x + obb.size.x,obb.center.y - obb.size.y ,obb.center.z - obb.size.z };///右手前
+
+	for (int i = 0; i < 8; i++) {
+		//アフィン変換
+		Matrix4x4 	VerticiesMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, verticies[i]);
+		//wvpMatrix
+		Matrix4x4 	VerticieswvpMatrix = VerticiesMatrix * viewProjectionMatrix;
+		//Screen変換
+		verticiesScreen[i] = Matrix4x4::ScreenTransform(Vector3{}, VerticieswvpMatrix, viewportMatrix);
+	}
+
+	//点をつなぐ
+	Novice::DrawLine(int(verticiesScreen[0].x), int(verticiesScreen[0].y), int(verticiesScreen[1].x), int(verticiesScreen[1].y), color);//左から右
+	Novice::DrawLine(int(verticiesScreen[0].x), int(verticiesScreen[0].y), int(verticiesScreen[2].x), int(verticiesScreen[2].y), color);//奥から手前
+	Novice::DrawLine(int(verticiesScreen[0].x), int(verticiesScreen[0].y), int(verticiesScreen[4].x), int(verticiesScreen[4].y), color);//上から下
+
+	Novice::DrawLine(int(verticiesScreen[1].x), int(verticiesScreen[1].y), int(verticiesScreen[3].x), int(verticiesScreen[3].y), color);
+	Novice::DrawLine(int(verticiesScreen[1].x), int(verticiesScreen[1].y), int(verticiesScreen[5].x), int(verticiesScreen[5].y), color);
+	Novice::DrawLine(int(verticiesScreen[2].x), int(verticiesScreen[2].y), int(verticiesScreen[3].x), int(verticiesScreen[3].y), color);
+	Novice::DrawLine(int(verticiesScreen[2].x), int(verticiesScreen[2].y), int(verticiesScreen[6].x), int(verticiesScreen[6].y), color);
+	Novice::DrawLine(int(verticiesScreen[3].x), int(verticiesScreen[3].y), int(verticiesScreen[7].x), int(verticiesScreen[7].y), color);
+	Novice::DrawLine(int(verticiesScreen[4].x), int(verticiesScreen[4].y), int(verticiesScreen[5].x), int(verticiesScreen[5].y), color);
+	Novice::DrawLine(int(verticiesScreen[4].x), int(verticiesScreen[4].y), int(verticiesScreen[6].x), int(verticiesScreen[6].y), color);
+	Novice::DrawLine(int(verticiesScreen[7].x), int(verticiesScreen[7].y), int(verticiesScreen[5].x), int(verticiesScreen[5].y), color);
+	Novice::DrawLine(int(verticiesScreen[7].x), int(verticiesScreen[7].y), int(verticiesScreen[6].x), int(verticiesScreen[6].y), color);
+
 
 }
