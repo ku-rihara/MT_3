@@ -113,7 +113,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 ViewProjectionMatrix = viewMatrix * projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-
 		///
 		/// ↑更新処理ここまで
 		///
@@ -151,7 +150,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Novice::Finalize();
 	return 0;
 }
-
 
 void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix) {
 	const float kGridHalfWidth = 2.0f;//Gridの半分の幅
@@ -317,8 +315,6 @@ void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Mat
 	Novice::DrawLine(int(verticiesScreen[7].x), int(verticiesScreen[7].y), int(verticiesScreen[5].x), int(verticiesScreen[5].y), color);
 	Novice::DrawLine(int(verticiesScreen[7].x), int(verticiesScreen[7].y), int(verticiesScreen[6].x), int(verticiesScreen[6].y), color);
 
-
-
 }
 
 Vector3 Project(const Vector3& v1, const Vector3& v2) {
@@ -349,7 +345,7 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere) {
 }
 
 bool IsCollision(const AABB& aabb, const Segment& segment) {
-	float inf = INFINITY;
+	/*float inf = INFINITY;*/
 	Vector3 tMin = (aabb.min - segment.origin) / segment.diff;
 	Vector3 tMax = (aabb.max - segment.origin) / segment.diff;
 
@@ -365,10 +361,12 @@ bool IsCollision(const AABB& aabb, const Segment& segment) {
 			segment.origin.z == aabb.max.z || segment.origin.z == aabb.min.z) {
 			return false;
 		}
+		/*else {
 			if (0 < inf) { return true; }
-		if (0 > inf) { return false; }
-		if (0 < -inf) { return false; }
-		if (0 > -inf) { return true; }
+			if (0 > inf) { return false; }
+			if (0 < -inf) { return false; }
+			if (0 > -inf) { return true; }
+		}*/
 	}
 	//AABBとの衝突点（貫通点）のtが小さい方
 	float tmin = max(max(tNear.x, tNear.y), tNear.z);
