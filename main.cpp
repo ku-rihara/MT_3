@@ -344,8 +344,9 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere) {
 	}
 }
 
+
 bool IsCollision(const AABB& aabb, const Segment& segment) {
-	/*float inf = INFINITY;*/
+
 	Vector3 tMin = (aabb.min - segment.origin) / segment.diff;
 	Vector3 tMax = (aabb.max - segment.origin) / segment.diff;
 
@@ -361,22 +362,68 @@ bool IsCollision(const AABB& aabb, const Segment& segment) {
 			segment.origin.z == aabb.max.z || segment.origin.z == aabb.min.z) {
 			return false;
 		}
-		/*else {
-			if (0 < inf) { return true; }
-			if (0 > inf) { return false; }
-			if (0 < -inf) { return false; }
-			if (0 > -inf) { return true; }
-		}*/
+	
 	}
+
 	//AABBとの衝突点（貫通点）のtが小さい方
 	float tmin = max(max(tNear.x, tNear.y), tNear.z);
 	//AABBとの衝突点（貫通点）のtが大きい方
 	float tmax = min(min(tFar.x, tFar.y), tFar.z);
-	if (tmin <= tmax) {
-		return true;
-	}
-	else {
+	if ((aabb.min.x <= max(segment.origin.x + segment.diff.x, segment.origin.x) && aabb.max.x >= min(segment.origin.x + segment.diff.x, segment.origin.x)) &&
+		(aabb.min.y <= max(segment.origin.y + segment.diff.y, segment.origin.y) && aabb.max.y >= min(segment.origin.y + segment.diff.y, segment.origin.y)) &&
+		(aabb.min.z <= max(segment.origin.z + segment.diff.z, segment.origin.z) && aabb.max.z >= min(segment.origin.z + segment.diff.z, segment.origin.z))) {
 
-		return false;
+		if (tmin <= tmax) {
+			return true;
+		}
+		else {
+
+			return false;
+		}
 	}
+
+	return false;
+
 }
+
+
+//bool IsColligion(const Triangle& triangle, const Segment& segment) {
+//
+//	//三角形から平面を作る
+//	Vector3 v1 = triangle.vertices[1] - triangle.vertices[0];
+//	Vector3 v2 = triangle.vertices[2] - triangle.vertices[1];
+//	Vector3 cross = Cross(v1, v2);
+//
+//	Vector3 Ncross = Normnalize(cross);
+//	float distance = Dot(triangle.vertices[0], Ncross);
+//	float dot = Dot(segment.diff, Ncross);
+//	if (dot == 0.0f) {
+//		return false;
+//	}
+//	float t = (distance - Dot(segment.origin, Ncross)) / dot;
+//	Vector3 p;
+//	p.x = segment.origin.x + t * segment.diff.x;
+//	p.y = segment.origin.y + t * segment.diff.y;
+//	p.z = segment.origin.z + t * segment.diff.z;
+//
+//	//各辺を結んだベクトルと、頂点と衝突点pを結んだベクトルのクロス積を取る
+//	Vector3 cross01 = Cross(triangle.vertices[1] - triangle.vertices[0], p - triangle.vertices[1]);
+//	Vector3 cross12 = Cross(triangle.vertices[2] - triangle.vertices[1], p - triangle.vertices[2]);
+//	Vector3 cross20 = Cross(triangle.vertices[0] - triangle.vertices[2], p - triangle.vertices[0]);
+//
+//	if (t >= 0 && t <= 1) {
+//		//全ての小三角形のクロス
+//		if (Dot(cross01, Ncross) >= 0.0f &&
+//			Dot(cross12, Ncross) >= 0.0f &&
+//			Dot(cross20, Ncross) >= 0.0f) {
+//			return true;
+//		}
+//		else {
+//			return false;
+//		}
+//	}
+//
+//	return false;
+//
+//}
+//
