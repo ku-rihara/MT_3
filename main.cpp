@@ -25,6 +25,12 @@ struct AABB {
 	Vector3 max;
 };
 
+struct OBB {
+	Vector3 center;
+	Vector3 orientations[3];
+	Vector3 size;
+};
+
 static const int kWindowWidth = 1280;
 static const int kWindowHeight = 720;
 
@@ -43,7 +49,9 @@ Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 
 bool IsCollision(const AABB& aabb, const Sphere& sphere);
 
-bool IsCollision(const AABB& aabb, const Segment& segment);
+bool IsCollision(const OBB& obb, const Sphere& sphere);
+
+void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
 
@@ -57,14 +65,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
+	Vector3 rotate{ 0.0f,0.0f,0.0f };
 
-	AABB aabb1{
-		.min{-0.5f,-0.5f,-0.5f},
-		.max{0.5f,0.5f,0.5f},
+	OBB obb{
+		.center{-1.0f,0.0f,0.0f},
+		.orientations = {{1.0f,0.0f,0.0f},
+					   { 0.0f,1.0f,0.0f},
+					   {0.0f,0.0f,1.0f}},
+					   .size{0.5f,0.5f,0.5f} 
 	};
-	Segment segment{
-		.origin{-0.7f,-0.5f,-0.5f},
-		.diff{2.0f,-0.5f,0.0f},
+
+	Sphere sphere{
+		.center{0.0f,0.0f,0.0f},
+		.radius{0.5f}
 	};
 
 	// キー入力結果を受け取る箱
@@ -93,20 +106,39 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::End();
 
 		ImGui::Begin("aabb1");
-		aabb1.min.x = (std::min)(aabb1.min.x, aabb1.max.x);
+		/*aabb1.min.x = (std::min)(aabb1.min.x, aabb1.max.x);
 		aabb1.max.x = (std::max)(aabb1.min.x, aabb1.max.x);
 		aabb1.min.y = (std::min)(aabb1.min.y, aabb1.max.y);
 		aabb1.max.y = (std::max)(aabb1.min.y, aabb1.max.y);
 		aabb1.min.z = (std::min)(aabb1.min.z, aabb1.max.z);
 		aabb1.max.z = (std::max)(aabb1.min.z, aabb1.max.z);
 		ImGui::DragFloat3("aabb1Max", &aabb1.max.x, 0.01f);
-		ImGui::DragFloat3("aabb1Min", &aabb1.min.x, 0.01f);
+		ImGui::DragFloat3("aabb1Min", &aabb1.min.x, 0.01f);*/
 		ImGui::End();
 
 		ImGui::Begin("Segment");
-		ImGui::DragFloat3("origin", &segment.origin.x, 0.01f);
-		ImGui::DragFloat3("diff", &segment.diff.x, 0.01f);
+		//回転行列を生成
+		Matrix4x4 OBBWorldMatrix = Matrix4x4::MakeAffineMatrix({ 1,1,1 }, {}, obb.center);
+		Matrix4x4 InverseOBBWorldMatrix = Matrix4x4::Inverse(OBBWorldMatrix);
+		Matrix4x4 rotateMatrix = ((Matrix4x4::MakeRotateXMatrix(rotate.x) * Matrix4x4::MakeRotateYMatrix(rotate.y)) * Matrix4x4::MakeRotateZMatrix(rotate.z));
+		//回転行列から軸を抽出
+		obb.orientations[0].x = rotateMatrix.m[0][0];
+		obb.orientations[0].y = rotateMatrix.m[0][1];
+		obb.orientations[0].z = rotateMatrix.m[0][2];
+
+		obb.orientations[1].x = rotateMatrix.m[1][0];
+		obb.orientations[1].y = rotateMatrix.m[1][1];
+		obb.orientations[1].z = rotateMatrix.m[1][2];
+
+		obb.orientations[2].x = rotateMatrix.m[2][0];
+		obb.orientations[2].y = rotateMatrix.m[2][1];
+		obb.orientations[2].z = rotateMatrix.m[2][2];
 		ImGui::End();
+
+		Vector3 centerInOBBLocalSphere = Matrix4x4::Transform(sphere.center,InverseOBBWorldMatrix );
+
+		AABB aabbOBBLocal{ .min{-obb.size.x,-obb.size.y,-obb.size.z},.max{obb.size.x,obb.size.y,obb.size.z} };
+		Sphere sphereOBBLocal{ centerInOBBLocalSphere,sphere.radius };
 
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
@@ -123,11 +155,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
+	/*	Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
 		Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
-		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
-
-		if (IsCollision(aabb1, segment)) {
+		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);*/
+		//ローカル空間で当たり判定
+		if (IsCollision(aabbOBBLocal, sphereOBBLocal)) {
 			DrawAABB(aabb1, ViewProjectionMatrix, viewportMatrix, RED);
 		}
 		else {
@@ -347,38 +379,10 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere) {
 		return false;
 	}
 }
+//
+//bool IsCollision(const OBB& obb, const Sphere& sphere);
 
-bool IsCollision(const AABB& aabb, const Segment& segment) {
-	float inf = INFINITY;
-	Vector3 tMin = (aabb.min - segment.origin) / segment.diff;
-	Vector3 tMax = (aabb.max - segment.origin) / segment.diff;
+void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	
 
-	Vector3 tNear{ min(tMin.x,tMax.x), min(tMin.y,tMax.y), min(tMin.z,tMax.z) };
-	Vector3 tFar{ max(tMin.x,tMax.x), max(tMin.y,tMax.y), max(tMin.z,tMax.z) };
-
-	if ((segment.diff.x == 0 && segment.diff.y == 0) ||
-		(segment.diff.x == 0 && segment.diff.z == 0) ||
-		(segment.diff.y == 0 && segment.diff.z == 0)) {
-
-		if (segment.origin.x == aabb.max.x || segment.origin.x == aabb.min.x ||
-			segment.origin.y == aabb.max.y || segment.origin.y == aabb.min.y ||
-			segment.origin.z == aabb.max.z || segment.origin.z == aabb.min.z) {
-			return false;
-		}
-			if (0 < inf) { return true; }
-		if (0 > inf) { return false; }
-		if (0 < -inf) { return false; }
-		if (0 > -inf) { return true; }
-	}
-	//AABBとの衝突点（貫通点）のtが小さい方
-	float tmin = max(max(tNear.x, tNear.y), tNear.z);
-	//AABBとの衝突点（貫通点）のtが大きい方
-	float tmax = min(min(tFar.x, tFar.y), tFar.z);
-	if (tmin <= tmax) {
-		return true;
-	}
-	else {
-
-		return false;
-	}
 }
