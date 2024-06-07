@@ -38,7 +38,7 @@ bool IsCollision(const AABB& aabb1, const AABB& aabb2);
 void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 Vector3 Project(const Vector3& v1, const Vector3& v2);
-	
+
 Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 
 bool IsCollision(const AABB& aabb, const Sphere& sphere);
@@ -60,7 +60,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	AABB aabb1{
 		.min{-0.5f,-0.5f,-0.5f},
-		.max{0.0f,0.0f,0.0f},
+		.max{0.5f,0.5f,0.5f},
 	};
 	Segment segment{
 		.origin{-0.7f,-0.5f,-0.5f},
@@ -103,8 +103,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("aabb1Min", &aabb1.min.x, 0.01f);
 		ImGui::End();
 
-		ImGui::Begin("Sphere");
-		
+		ImGui::Begin("Segment");
+		ImGui::DragFloat3("origin", &segment.origin.x, 0.01f);
+		ImGui::DragFloat3("diff", &segment.diff.x, 0.01f);
 		ImGui::End();
 
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
@@ -122,10 +123,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
+		Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
+		Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
+		Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
 
-		
-
-		if (IsCollision(aabb1,sphere )) {
+		if (IsCollision(aabb1, segment)) {
 			DrawAABB(aabb1, ViewProjectionMatrix, viewportMatrix, RED);
 		}
 		else {
@@ -322,14 +324,14 @@ void DrawAABB(const AABB& aabb, const Matrix4x4& viewProjectionMatrix, const Mat
 Vector3 Project(const Vector3& v1, const Vector3& v2) {
 	Vector3 normalizeB = Normnalize(v2);
 	float dot = Dot(v1, normalizeB);
-	return normalizeB*dot;
+	return normalizeB * dot;
 }
 
 Vector3 ClosesPoint(const Vector3& point, const Segment& segment) {
-	
+
 	Vector3 projection = Project(Vector3(point.x - segment.origin.x, point.y - segment.origin.y, point.z - segment.origin.z), segment.diff);
 
-	return Vector3{ segment.origin.x + projection.x,segment.origin.y + projection.y,segment.origin.z + projection.z }; 
+	return Vector3{ segment.origin.x + projection.x,segment.origin.y + projection.y,segment.origin.z + projection.z };
 }
 
 bool IsCollision(const AABB& aabb, const Sphere& sphere) {
@@ -342,6 +344,41 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere) {
 		return true;
 	}
 	else {
+		return false;
+	}
+}
+
+bool IsCollision(const AABB& aabb, const Segment& segment) {
+	float inf = INFINITY;
+	Vector3 tMin = (aabb.min - segment.origin) / segment.diff;
+	Vector3 tMax = (aabb.max - segment.origin) / segment.diff;
+
+	Vector3 tNear{ min(tMin.x,tMax.x), min(tMin.y,tMax.y), min(tMin.z,tMax.z) };
+	Vector3 tFar{ max(tMin.x,tMax.x), max(tMin.y,tMax.y), max(tMin.z,tMax.z) };
+
+	if ((segment.diff.x == 0 && segment.diff.y == 0) ||
+		(segment.diff.x == 0 && segment.diff.z == 0) ||
+		(segment.diff.y == 0 && segment.diff.z == 0)) {
+
+		if (segment.origin.x == aabb.max.x || segment.origin.x == aabb.min.x ||
+			segment.origin.y == aabb.max.y || segment.origin.y == aabb.min.y ||
+			segment.origin.z == aabb.max.z || segment.origin.z == aabb.min.z) {
+			return false;
+		}
+			if (0 < inf) { return true; }
+		if (0 > inf) { return false; }
+		if (0 < -inf) { return false; }
+		if (0 > -inf) { return true; }
+	}
+	//AABBとの衝突点（貫通点）のtが小さい方
+	float tmin = max(max(tNear.x, tNear.y), tNear.z);
+	//AABBとの衝突点（貫通点）のtが大きい方
+	float tmax = min(min(tFar.x, tFar.y), tFar.z);
+	if (tmin <= tmax) {
+		return true;
+	}
+	else {
+
 		return false;
 	}
 }
