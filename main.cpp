@@ -118,30 +118,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		ImGui::Begin("OBB");
 		//回転行列を生成
-		Matrix4x4 OBBWorldMatrix = Matrix4x4::MakeAffineMatrix({ 1,1,1 }, {}, obb.center);
-		Matrix4x4 InverseOBBWorldMatrix = Matrix4x4::Inverse(OBBWorldMatrix);
 		Matrix4x4 rotateMatrix = ((Matrix4x4::MakeRotateXMatrix(rotate.x) * Matrix4x4::MakeRotateYMatrix(rotate.y)) * Matrix4x4::MakeRotateZMatrix(rotate.z));
+
 		//回転行列から軸を抽出
+		//X軸方向
 		obb.orientations[0].x = rotateMatrix.m[0][0];
 		obb.orientations[0].y = rotateMatrix.m[0][1];
 		obb.orientations[0].z = rotateMatrix.m[0][2];
-
+		//Y軸方向
 		obb.orientations[1].x = rotateMatrix.m[1][0];
 		obb.orientations[1].y = rotateMatrix.m[1][1];
 		obb.orientations[1].z = rotateMatrix.m[1][2];
-
+		//Z軸方向
 		obb.orientations[2].x = rotateMatrix.m[2][0];
 		obb.orientations[2].y = rotateMatrix.m[2][1];
 		obb.orientations[2].z = rotateMatrix.m[2][2];
 		for (int i = 0; i < 3; i++) {
 			obb.orientations[i] = Normnalize(obb.orientations[i]);
 		}
+		ImGui::DragFloat3("center", &obb.center.x, 0.01f);
+		ImGui::DragFloat3("aabb1Min", &obb.size.x, 0.01f);
+		ImGui::DragFloat3("rotate", &rotate.x, 0.01f);
 		ImGui::End();
 
-		Vector3 centerInOBBLocalSphere = Matrix4x4::Transform(sphere.center, InverseOBBWorldMatrix);
-
-		AABB aabbOBBLocal{ .min{-obb.size.x,-obb.size.y,-obb.size.z},.max{obb.size.x,obb.size.y,obb.size.z} };
-		Sphere sphereOBBLocal{ centerInOBBLocalSphere,sphere.radius };
 
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
@@ -163,7 +162,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
 			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);*/
 			//ローカル空間で当たり判定
-		if (IsCollision(aabbOBBLocal, sphereOBBLocal)) {
+		if (IsCollision(obb, sphere)) {
 			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, RED);
 		}
 		else {
@@ -391,20 +390,23 @@ void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix
 
 	Vector3 verticies[8];
 	Vector3 verticiesScreen[8];
-	//上の面
-	verticies[0] = { obb.center.x - obb.size.x,obb.center.y + obb.size.y ,obb.center.z + obb.size.z };//左奥
-	verticies[1] = { obb.center.x + obb.size.x,obb.center.y + obb.size.y ,obb.center.z + obb.size.z };//右奥
-	verticies[2] = { obb.center.x - obb.size.x,obb.center.y + obb.size.y ,obb.center.z - obb.size.z };//左手前
-	verticies[3] = { obb.center.x + obb.size.x,obb.center.y + obb.size.y ,obb.center.z - obb.size.z };//右手前
-	//下の面		   	obb.
-	verticies[4] = { obb.center.x - obb.size.x,obb.center.y - obb.size.y ,obb.center.z + obb.size.z }; //左奥
-	verticies[5] = { obb.center.x + obb.size.x,obb.center.y - obb.size.y ,obb.center.z + obb.size.z }; //右奥
-	verticies[6] = { obb.center.x - obb.size.x,obb.center.y - obb.size.y ,obb.center.z - obb.size.z };///左手前
-	verticies[7] = { obb.center.x + obb.size.x,obb.center.y - obb.size.y ,obb.center.z - obb.size.z };///右手前
+	
+
+	// OBB の 8 つの頂点を計算(中心+各軸のサイズ)
+	verticies[0] = obb.center + (obb.orientations[0] * obb.size.x) + (obb.orientations[1] * obb.size.y) + (obb.orientations[2] * obb.size.z);
+	verticies[1] = obb.center - (obb.orientations[0] * obb.size.x) + (obb.orientations[1] * obb.size.y) + (obb.orientations[2] * obb.size.z);
+	verticies[2] = obb.center + (obb.orientations[0] * obb.size.x) - (obb.orientations[1] * obb.size.y) + (obb.orientations[2] * obb.size.z);
+	verticies[3] = obb.center - (obb.orientations[0] * obb.size.x) - (obb.orientations[1] * obb.size.y) + (obb.orientations[2] * obb.size.z);
+	verticies[4] = obb.center + (obb.orientations[0] * obb.size.x) + (obb.orientations[1] * obb.size.y) - (obb.orientations[2] * obb.size.z);
+	verticies[5] = obb.center - (obb.orientations[0] * obb.size.x) + (obb.orientations[1] * obb.size.y) - (obb.orientations[2] * obb.size.z);
+	verticies[6] = obb.center + (obb.orientations[0] * obb.size.x) - (obb.orientations[1] * obb.size.y) - (obb.orientations[2] * obb.size.z);
+	verticies[7] = obb.center - (obb.orientations[0] * obb.size.x) - (obb.orientations[1] * obb.size.y) - (obb.orientations[2] * obb.size.z);
+
 
 	for (int i = 0; i < 8; i++) {
-		//アフィン変換
-		Matrix4x4 	VerticiesMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, Vector3{}, verticies[i]);
+		
+			//アフィン変換
+			Matrix4x4 	VerticiesMatrix = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, {}, verticies[i]);
 		//wvpMatrix
 		Matrix4x4 	VerticieswvpMatrix = VerticiesMatrix * viewProjectionMatrix;
 		//Screen変換
@@ -426,5 +428,40 @@ void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix
 	Novice::DrawLine(int(verticiesScreen[7].x), int(verticiesScreen[7].y), int(verticiesScreen[5].x), int(verticiesScreen[5].y), color);
 	Novice::DrawLine(int(verticiesScreen[7].x), int(verticiesScreen[7].y), int(verticiesScreen[6].x), int(verticiesScreen[6].y), color);
 
+
+}
+
+bool  IsCollision(const OBB& obb, const Sphere& sphere) {
+	//回転行列を生成
+	Matrix4x4 rotateMatrix;
+	rotateMatrix = Matrix4x4::MakeIdentity4x4();
+	rotateMatrix.m[0][0]=obb.orientations[0].x;
+	rotateMatrix.m[0][1]=obb.orientations[0].y;
+	rotateMatrix.m[0][2]=obb.orientations[0].z;
+	//Y軸方向			  
+	rotateMatrix.m[1][0]=obb.orientations[1].x;
+	rotateMatrix.m[1][1]=obb.orientations[1].y;
+	rotateMatrix.m[1][2]=obb.orientations[1].z;
+	//Z軸方向			  
+	rotateMatrix.m[2][0]=obb.orientations[2].x;
+	rotateMatrix.m[2][1]=obb.orientations[2].y;
+	rotateMatrix.m[2][2]=obb.orientations[2].z;
+	Matrix4x4 OBBWorldSTMatrix = Matrix4x4::MakeAffineMatrix({ 1,1,1 }, { }, obb.center);
+	Matrix4x4 OBBWorldSTRMatrix = rotateMatrix*OBBWorldSTMatrix;
+
+	Matrix4x4 InverseOBBWorldMatrix = Matrix4x4::Inverse(OBBWorldSTRMatrix);
+
+
+	Vector3 centerInOBBLocalSphere = Matrix4x4::Transform(sphere.center, InverseOBBWorldMatrix);
+
+	AABB aabbOBBLocal{ .min{-obb.size.x,-obb.size.y,-obb.size.z},.max{obb.size.x,obb.size.y,obb.size.z} };
+	Sphere sphereOBBLocal{ centerInOBBLocalSphere,sphere.radius };
+
+	if (IsCollision(aabbOBBLocal, sphereOBBLocal)) {
+		return true;
+	}
+	else {
+		return	false;
+	}
 
 }
