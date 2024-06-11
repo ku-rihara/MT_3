@@ -51,6 +51,8 @@ bool IsCollision(const AABB& aabb, const Sphere& sphere);
 
 bool IsCollision(const OBB& obb, const Sphere& sphere);
 
+bool IsCollision(const Segment& segment, const OBB& obb);
+
 void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
@@ -74,11 +76,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					   {0.0f,0.0f,1.0f}},
 					   .size{0.5f,0.5f,0.5f}
 	};
-
-	Sphere sphere{
-		.center{0.0f,0.0f,0.0f},
-		.radius{0.5f}
-	};
+	Segment segment{
+		.origin{-0.8f,-0.3f,0.0f},
+		.diff{0.5f,0.5f,0.5f} };
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -463,5 +463,9 @@ bool  IsCollision(const OBB& obb, const Sphere& sphere) {
 	else {
 		return	false;
 	}
+
+}
+
+bool IsCollision(const Segment& segment, const OBB& obb) {
 
 }
