@@ -53,6 +53,8 @@ bool IsCollision(const OBB& obb, const Sphere& sphere);
 
 bool IsCollision(const Segment& segment, const OBB& obb);
 
+bool IsCollision(const AABB& aabb, const Segment& segment);
+
 void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
@@ -105,15 +107,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 		ImGui::End();
 
-		ImGui::Begin("aabb1");
-		/*aabb1.min.x = (std::min)(aabb1.min.x, aabb1.max.x);
-		aabb1.max.x = (std::max)(aabb1.min.x, aabb1.max.x);
-		aabb1.min.y = (std::min)(aabb1.min.y, aabb1.max.y);
-		aabb1.max.y = (std::max)(aabb1.min.y, aabb1.max.y);
-		aabb1.min.z = (std::min)(aabb1.min.z, aabb1.max.z);
-		aabb1.max.z = (std::max)(aabb1.min.z, aabb1.max.z);
-		ImGui::DragFloat3("aabb1Max", &aabb1.max.x, 0.01f);
-		ImGui::DragFloat3("aabb1Min", &aabb1.min.x, 0.01f);*/
+		ImGui::Begin("Segment");
+		ImGui::DragFloat3("origin", &segment.origin.x, 0.01f);
+		ImGui::DragFloat3("diff", &segment.diff.x, 0.01f);
 		ImGui::End();
 
 		ImGui::Begin("OBB");
@@ -157,12 +153,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, WHITE);
-		/*	Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
+		
+			Vector3 start = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
 			Vector3 end = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
-			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);*/
+			Novice::DrawLine(int(start.x), int(start.y), int(end.x), int(end.y), WHITE);
 			//ローカル空間で当たり判定
-		if (IsCollision(obb, sphere)) {
+		if (IsCollision(segment, obb)) {
 			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, RED);
 		}
 		else {
@@ -431,6 +427,48 @@ void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix
 
 }
 
+
+bool IsCollision(const AABB& aabb, const Segment& segment) {
+
+	Vector3 tMin = (aabb.min - segment.origin) / segment.diff;
+	Vector3 tMax = (aabb.max - segment.origin) / segment.diff;
+
+	Vector3 tNear{ min(tMin.x,tMax.x), min(tMin.y,tMax.y), min(tMin.z,tMax.z) };
+	Vector3 tFar{ max(tMin.x,tMax.x), max(tMin.y,tMax.y), max(tMin.z,tMax.z) };
+
+	if ((segment.diff.x == 0 && segment.diff.y == 0) ||
+		(segment.diff.x == 0 && segment.diff.z == 0) ||
+		(segment.diff.y == 0 && segment.diff.z == 0)) {
+
+		if (segment.origin.x == aabb.max.x || segment.origin.x == aabb.min.x ||
+			segment.origin.y == aabb.max.y || segment.origin.y == aabb.min.y ||
+			segment.origin.z == aabb.max.z || segment.origin.z == aabb.min.z) {
+			return false;
+		}
+
+	}
+
+	//AABBとの衝突点（貫通点）のtが小さい方
+	float tmin = max(max(tNear.x, tNear.y), tNear.z);
+	//AABBとの衝突点（貫通点）のtが大きい方
+	float tmax = min(min(tFar.x, tFar.y), tFar.z);
+	if ((aabb.min.x <= max(segment.origin.x + segment.diff.x, segment.origin.x) && aabb.max.x >= min(segment.origin.x + segment.diff.x, segment.origin.x)) &&
+		(aabb.min.y <= max(segment.origin.y + segment.diff.y, segment.origin.y) && aabb.max.y >= min(segment.origin.y + segment.diff.y, segment.origin.y)) &&
+		(aabb.min.z <= max(segment.origin.z + segment.diff.z, segment.origin.z) && aabb.max.z >= min(segment.origin.z + segment.diff.z, segment.origin.z))) {
+
+		if (tmin <= tmax) {
+			return true;
+		}
+		else {
+
+			return false;
+		}
+	}
+
+	return false;
+
+}
+
 bool  IsCollision(const OBB& obb, const Sphere& sphere) {
 	//回転行列を生成
 	Matrix4x4 rotateMatrix;
@@ -467,5 +505,32 @@ bool  IsCollision(const OBB& obb, const Sphere& sphere) {
 }
 
 bool IsCollision(const Segment& segment, const OBB& obb) {
+	//回転行列を生成
+	Matrix4x4 rotateMatrix;
+	rotateMatrix = Matrix4x4::MakeIdentity4x4();
+	rotateMatrix.m[0][0] = obb.orientations[0].x;
+	rotateMatrix.m[0][1] = obb.orientations[0].y;
+	rotateMatrix.m[0][2] = obb.orientations[0].z;
+	//Y軸方向			  
+	rotateMatrix.m[1][0] = obb.orientations[1].x;
+	rotateMatrix.m[1][1] = obb.orientations[1].y;
+	rotateMatrix.m[1][2] = obb.orientations[1].z;
+	//Z軸方向			  
+	rotateMatrix.m[2][0] = obb.orientations[2].x;
+	rotateMatrix.m[2][1] = obb.orientations[2].y;
+	rotateMatrix.m[2][2] = obb.orientations[2].z;
+	Matrix4x4 OBBWorldSTMatrix = Matrix4x4::MakeAffineMatrix({ 1,1,1 }, { }, obb.center);
+	Matrix4x4 OBBWorldSTRMatrix = rotateMatrix * OBBWorldSTMatrix;
 
+	Matrix4x4 InverseOBBWorldMatrix = Matrix4x4::Inverse(OBBWorldSTRMatrix);
+
+	Vector3 localOrigin = Matrix4x4::Transform(segment.origin, InverseOBBWorldMatrix);
+	Vector3 localEnd= Matrix4x4::Transform(segment.origin+segment.diff, InverseOBBWorldMatrix);
+
+	AABB aabbOBBLocal{ .min{-obb.size.x,-obb.size.y,-obb.size.z},.max{obb.size.x,obb.size.y,obb.size.z} };
+
+	Segment localSegment;
+	localSegment.origin = localOrigin;
+	localSegment.diff = localEnd - localOrigin;
+	return IsCollision(aabbOBBLocal, localSegment);
 }
