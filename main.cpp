@@ -69,6 +69,10 @@ bool IsCollision(const AABB& aabb, const Segment& segment);
 bool IsCollision(const AABB& aabb, const Ray& Ray);
 bool IsCollision(const AABB& aabb, const Line& Line);
 
+Vector3 Lerp(const Vector3& start, const Vector3& end, float t);
+
+void DrawBezier(const Vector3& cp0, const Vector3& cp1, const Vector3 cp2, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
+
 void DrawOBB(const OBB& obb, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
@@ -83,26 +87,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
-	Vector3 rotate{ 0.0f,0.0f,0.0f };
-
-	OBB obb{
-		.center{-1.0f,0.0f,0.0f},
-		.orientations = {{1.0f,0.0f,0.0f},
-					   { 0.0f,1.0f,0.0f},
-					   {0.0f,0.0f,1.0f}},
-					   .size{0.5f,0.5f,0.5f}
+	Vector3 controlPoints[3] = {
+		{-0.8f,0.58f,1.0f},
+		{1.76f,1.0f,-0.3f},
+		{0.96f,-0.7f,2.3f},
 	};
-	Segment segment{
-		.origin{-0.1f,0.5f,0.0f},
-		.diff{0.5f,0.5f,0.5f} };
-
-	Ray ray{
-		.origin{0.3f,0.5f,0.0f},
-		.diff{0.5f,0.5f,0.5f} };
-
-	Line line{
-		.origin{0.7f,0.5f,0.0f},
-		.diff{0.5f,0.5f,0.5f} };
+	
+	Sphere constrolSphere[3];
+	
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -129,51 +121,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
 		ImGui::End();
 
-		ImGui::Begin("line");
-		if (ImGui::TreeNode("Segment(WHITE)")) {
-			ImGui::DragFloat3("origin", &segment.origin.x, 0.01f);
-			ImGui::DragFloat3("diff", &segment.diff.x, 0.01f);
-			ImGui::TreePop();
-		}
+		ImGui::Begin("ControlPoint");
+		ImGui::DragFloat3("controlPoint[0]", &controlPoints[0].x, 0.01f);
+		ImGui::DragFloat3("controlPoint[1]", &controlPoints[1].x, 0.01f);
+		ImGui::DragFloat3("controlPoint[2]", &controlPoints[2].x, 0.01f);
 
-		if (ImGui::TreeNode("Ray(BULE)")) {
-			ImGui::DragFloat3("origin", &ray.origin.x, 0.01f);
-			ImGui::DragFloat3("diff", &ray.diff.x, 0.01f);
-			ImGui::TreePop();
-		}
-
-		if (ImGui::TreeNode("Line(GREEN)")) {
-			ImGui::DragFloat3("origin", &line.origin.x, 0.01f);
-			ImGui::DragFloat3("diff", &line.diff.x, 0.01f);
-			ImGui::TreePop();
-		}
 		ImGui::End();
 
-		ImGui::Begin("OBB");
-		//回転行列を生成
-		Matrix4x4 rotateMatrix = ((Matrix4x4::MakeRotateXMatrix(rotate.x) * Matrix4x4::MakeRotateYMatrix(rotate.y)) * Matrix4x4::MakeRotateZMatrix(rotate.z));
-
-		//回転行列から軸を抽出
-		//X軸方向
-		obb.orientations[0].x = rotateMatrix.m[0][0];
-		obb.orientations[0].y = rotateMatrix.m[0][1];
-		obb.orientations[0].z = rotateMatrix.m[0][2];
-		//Y軸方向
-		obb.orientations[1].x = rotateMatrix.m[1][0];
-		obb.orientations[1].y = rotateMatrix.m[1][1];
-		obb.orientations[1].z = rotateMatrix.m[1][2];
-		//Z軸方向
-		obb.orientations[2].x = rotateMatrix.m[2][0];
-		obb.orientations[2].y = rotateMatrix.m[2][1];
-		obb.orientations[2].z = rotateMatrix.m[2][2];
 		for (int i = 0; i < 3; i++) {
-			obb.orientations[i] = Normnalize(obb.orientations[i]);
+			constrolSphere[i].center = controlPoints[i];
+			constrolSphere[i].radius = 0.03f;
 		}
-		ImGui::DragFloat3("center", &obb.center.x, 0.01f);
-		ImGui::DragFloat3("aabb1Min", &obb.size.x, 0.01f);
-		ImGui::DragFloat3("rotate", &rotate.x, 0.01f);
-		ImGui::End();
-
 
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
@@ -190,44 +148,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		
-			Vector3 Sstart = Matrix4x4::ScreenTransform(segment.origin, ViewProjectionMatrix, viewportMatrix);
-			Vector3 Send = Matrix4x4::ScreenTransform(segment.origin + segment.diff, ViewProjectionMatrix, viewportMatrix);
-
-			Vector3 Lstart = Matrix4x4::ScreenTransform(line.origin, ViewProjectionMatrix, viewportMatrix);
-			Vector3 Lend = Matrix4x4::ScreenTransform(line.origin + line.diff, ViewProjectionMatrix, viewportMatrix);
-
-			Vector3 Rstart = Matrix4x4::ScreenTransform(ray.origin, ViewProjectionMatrix, viewportMatrix);
-			Vector3 Rend = Matrix4x4::ScreenTransform(ray.origin + ray.diff, ViewProjectionMatrix, viewportMatrix);
-
-			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, WHITE);
-		
-		
-			
-			//ローカル空間で当たり判定
-		if (IsCollision(segment, obb)) {
-			Novice::DrawLine(int(Sstart.x), int(Sstart.y), int(Send.x), int(Send.y), RED);
+		DrawBezier(controlPoints[0], controlPoints[1], controlPoints[2], ViewProjectionMatrix, viewportMatrix, BLUE);
+		for (int i = 0; i < 3; i++) {
+			DrawSphere(constrolSphere[i], ViewProjectionMatrix, viewportMatrix, BLACK);
 		}
-		else {
-			Novice::DrawLine(int(Sstart.x), int(Sstart.y), int(Send.x), int(Send.y), WHITE);
-		}
-
-
-		if (IsCollision(ray, obb)) {
-			Novice::DrawLine(int(Rstart.x), int(Rstart.y), int(Rend.x), int(Rend.y), RED);
-		}
-		else {
-			Novice::DrawLine(int(Rstart.x), int(Rstart.y), int(Rend.x), int(Rend.y), BLUE);
-		}
-
-
-		if (IsCollision(line, obb)) {
-			Novice::DrawLine(int(Lstart.x), int(Lstart.y), int(Lend.x), int(Lend.y), RED);
-		}
-		else {
-			Novice::DrawLine(int(Lstart.x), int(Lstart.y), int(Lend.x), int(Lend.y), GREEN);
-		}
-
 
 		/// ↑描画処理ここまで
 		///
@@ -598,13 +522,13 @@ bool IsCollision(const AABB& aabb, const Line& line) {
 	//AABBとの衝突点（貫通点）のtが大きい方
 	float tmax = min(min(tFar.x, tFar.y), tFar.z);
 
-		if (tmin <= tmax) {
-			return true;
-		}
-		else {
+	if (tmin <= tmax) {
+		return true;
+	}
+	else {
 
-			return false;
-		}
+		return false;
+	}
 }
 
 
@@ -664,7 +588,7 @@ bool IsCollision(const Segment& segment, const OBB& obb) {
 	Matrix4x4 InverseOBBWorldMatrix = Matrix4x4::Inverse(OBBWorldSTRMatrix);
 
 	Vector3 localOrigin = Matrix4x4::Transform(segment.origin, InverseOBBWorldMatrix);
-	Vector3 localEnd= Matrix4x4::Transform(segment.origin+segment.diff, InverseOBBWorldMatrix);
+	Vector3 localEnd = Matrix4x4::Transform(segment.origin + segment.diff, InverseOBBWorldMatrix);
 
 	AABB aabbOBBLocal{ .min{-obb.size.x,-obb.size.y,-obb.size.z},.max{obb.size.x,obb.size.y,obb.size.z} };
 
@@ -734,4 +658,57 @@ bool IsCollision(const Line& line, const OBB& obb) {
 	localLine.origin = localOrigin;
 	localLine.diff = localEnd - localOrigin;
 	return IsCollision(aabbOBBLocal, localLine);
+}
+
+Vector3 Lerp(const Vector3& start, const Vector3& end, float t) {
+
+	Vector3 result;
+
+	result.x = t * start.x + (1.0f - t) * end.x;
+	result.y = t * start.y + (1.0f - t) * end.y;
+	result.z = t * start.z + (1.0f - t) * end.z;
+
+	return result;
+}
+
+void DrawBezier(const Vector3& cp0, const Vector3& cp1, const Vector3 cp2, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color) {
+	const int LineMax = 32;
+	Vector3 Sp0p1;
+	Vector3 Sp0p2;
+	Vector3 Sp;
+	Vector3 Ep0p1;
+	Vector3 Ep0p2;
+	Vector3 Ep;
+	Matrix4x4 	StartMatrix[LineMax];
+	Matrix4x4 	StartwvpMatrix[LineMax];
+	Vector3 StartScreen[LineMax];
+	Matrix4x4 	EndMatrix[LineMax];
+	Matrix4x4 	EndwvpMatrix[LineMax];
+	Vector3 EndScreen[LineMax];
+
+	for (int index = 0; index < LineMax; index++) {
+		float t0 = index / float(LineMax);
+		float t1 = (index + 1) / float(LineMax);
+
+		Sp0p1 = Lerp(cp0, cp1, t0);
+		Sp0p2 = Lerp(cp1, cp2, t0);
+		Ep0p1 = Lerp(cp0, cp1, t1);
+		Ep0p2 = Lerp(cp1, cp2, t1);
+
+		Sp = Lerp(Sp0p1, Sp0p2, t0);
+		Ep = Lerp(Ep0p1, Ep0p2, t1);
+
+		//アフィン変換
+		StartMatrix[index] = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, {}, Sp);
+		EndMatrix[index] = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, {}, Ep);
+		//wvpMatrix
+		StartwvpMatrix[index] = StartMatrix[index] * viewProjectionMatrix;
+		EndwvpMatrix[index] = EndMatrix[index] * viewProjectionMatrix;
+		//Screen変換
+		StartScreen[index] = Matrix4x4::ScreenTransform(Vector3{}, StartwvpMatrix[index], viewprtMatrix);
+		EndScreen[index] = Matrix4x4::ScreenTransform(Vector3{}, EndwvpMatrix[index], viewprtMatrix);
+
+		Novice::DrawLine(int(StartScreen[index].x), int(StartScreen[index].y), int(EndScreen[index].x), int(EndScreen[index].y), color);
+	}
+
 }
