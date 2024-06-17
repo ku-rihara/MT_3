@@ -60,15 +60,9 @@ Vector3 ClosesPoint(const Vector3& point, const Segment& segment);
 bool IsCollision(const AABB& aabb, const Sphere& sphere);
 
 bool IsCollision(const OBB& obb, const Sphere& sphere);
-
-bool IsCollision(const Segment& segment, const OBB& obb);
-bool IsCollision(const Ray& Ray, const OBB& obb);
-bool IsCollision(const Line& Line, const OBB& obb);
-
-bool IsCollision(const AABB& aabb, const Segment& segment);
-bool IsCollision(const AABB& aabb, const Ray& Ray);
-bool IsCollision(const AABB& aabb, const Line& Line);
-
+float Clamp(float n, float min, float max);
+size_t Clamp(size_t n, size_t min, size_t max);
+void DrawCatmullRom(const Vector3& p0, const Vector3& p1, const Vector3 p2, const Vector3& p3, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
 Vector3 Lerp(const Vector3& start, const Vector3& end, float t);
 
 void DrawBezier(const Vector3& cp0, const Vector3& cp1, const Vector3 cp2, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
@@ -87,14 +81,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
-	Vector3 controlPoints[3] = {
+	Vector3 controlPoints[4] = {
 		{-0.8f,0.58f,1.0f},
 		{1.76f,1.0f,-0.3f},
 		{0.96f,-0.7f,2.3f},
+		{-0.53f,-0.26f,-0.15f},
 	};
-	
-	Sphere constrolSphere[3];
-	
+
+	Sphere constrolSphere[4];
+
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -125,10 +120,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("controlPoint[0]", &controlPoints[0].x, 0.01f);
 		ImGui::DragFloat3("controlPoint[1]", &controlPoints[1].x, 0.01f);
 		ImGui::DragFloat3("controlPoint[2]", &controlPoints[2].x, 0.01f);
-
+		ImGui::DragFloat3("controlPoint[3]", &controlPoints[3].x, 0.01f);
 		ImGui::End();
 
-		for (int i = 0; i < 3; i++) {
+		for (int i = 0; i < 4; i++) {
 			constrolSphere[i].center = controlPoints[i];
 			constrolSphere[i].radius = 0.03f;
 		}
@@ -148,8 +143,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		DrawBezier(controlPoints[0], controlPoints[1], controlPoints[2], ViewProjectionMatrix, viewportMatrix, BLUE);
-		for (int i = 0; i < 3; i++) {
+		DrawCatmullRom(controlPoints[0], controlPoints[0], controlPoints[1], controlPoints[2], ViewProjectionMatrix, viewportMatrix, BLUE);
+		DrawCatmullRom(controlPoints[0], controlPoints[1], controlPoints[2], controlPoints[3], ViewProjectionMatrix, viewportMatrix, BLUE);
+		DrawCatmullRom(controlPoints[1], controlPoints[2], controlPoints[3], controlPoints[3], ViewProjectionMatrix, viewportMatrix, BLUE);
+		/*DrawBezier(controlPoints[0], controlPoints[1], controlPoints[2], ViewProjectionMatrix, viewportMatrix, BLUE);*/
+		for (int i = 0; i < 4; i++) {
 			DrawSphere(constrolSphere[i], ViewProjectionMatrix, viewportMatrix, BLACK);
 		}
 
@@ -712,3 +710,103 @@ void DrawBezier(const Vector3& cp0, const Vector3& cp1, const Vector3 cp2, const
 	}
 
 }
+void DrawCatmullRom(const Vector3& p0, const Vector3& p1, const Vector3 p2, const Vector3& p3, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color) {
+	const int LineMax = 32;
+	Vector3 result;
+	float s = 0.5f;
+	Matrix4x4 	StartMatrix[LineMax];
+	Matrix4x4 	StartwvpMatrix[LineMax];
+	Matrix4x4 	EndMatrix[LineMax];
+	Matrix4x4 	EndwvpMatrix[LineMax];
+	Vector3 StartScreen[LineMax];
+	Vector3 EndScreen[LineMax];
+	Vector3 Start;
+	Vector3 End;
+
+	for (int index = 0; index < LineMax; index++) {
+		float t0 = index / float(LineMax);
+		float t1 = (index + 1) / float(LineMax);
+		float t02 = std::powf(t0, 2);
+		float t03 = std::powf(t0, 3);
+		float t12 = std::powf(t1, 2);
+		float t13 = std::powf(t1, 3);
+
+		Start.x = s * ((-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t03 + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t02 + (-p0.x + p2.x) * t0 + 2 * p1.x);
+		Start.y = s * ((-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t03 + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t02 + (-p0.y + p2.y) * t0 + 2 * p1.y);
+		Start.z = s * ((-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t03 + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t02 + (-p0.z + p2.z) * t0 + 2 * p1.z);
+
+		End.x = s * ((-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t13 + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t12 + (-p0.x + p2.x) * t1 + 2 * p1.x);
+		End.y = s * ((-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t13 + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t12 + (-p0.y + p2.y) * t1 + 2 * p1.y);
+		End.z = s * ((-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t13 + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t12 + (-p0.z + p2.z) * t1 + 2 * p1.z);
+		//アフィン変換
+		StartMatrix[index] = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, {}, Start);
+		EndMatrix[index] = Matrix4x4::MakeAffineMatrix(Vector3{ 1,1,1 }, {}, End);
+		//wvpMatrix
+		StartwvpMatrix[index] = StartMatrix[index] * viewProjectionMatrix;
+		EndwvpMatrix[index] = EndMatrix[index] * viewProjectionMatrix;
+		//Screen変換
+		StartScreen[index] = Matrix4x4::ScreenTransform(Vector3{}, StartwvpMatrix[index], viewprtMatrix);
+		EndScreen[index] = Matrix4x4::ScreenTransform(Vector3{}, EndwvpMatrix[index], viewprtMatrix);
+		Novice::DrawLine(int(StartScreen[index].x), int(StartScreen[index].y), int(EndScreen[index].x), int(EndScreen[index].y), color);
+
+	}
+}
+
+float Clamp(float n, float min, float max) {
+	if (n > max) {
+		return max;
+	}
+	if (n < min) {
+		return min;
+	}
+	return n;
+}
+
+size_t Clamp(size_t n, size_t min, size_t max) {
+	if (n > max) {
+		return max;
+	}
+	if (n < min) {
+		return min;
+	}
+	return n;
+}
+
+//Vector3 CatmullRomPosition(const std::vector<Vector3>& points, float t) {
+//	assert(points.size() >= 4 && "制御点は４点以上必要です");
+//	// 区間数は制御点の数-1
+//	size_t division = points.size() - 1;
+//	// 1区間の長さ(全体を1.0fとした割合)
+//	float areaWidth = 1.0f / division;
+//	// 区間内の始点0.0f、終点を1.0fとした時の現在位置
+//	float t_2 = std::fmod(t, areaWidth) * division;
+//	// 下限(0.0f)と上限(1.0f)とした時の現在位置
+//	t_2 = Clamp(t_2, 0.0f, 1.0f);
+//	// 区間番号
+//	size_t index = static_cast<size_t>(t / areaWidth);
+//	// 区間番号が上限を超えないように収める
+//	index = Clamp(index, 0, division - 1);
+//
+//	// 4点分のインデックス
+//	size_t index0 = index - 1;
+//	size_t index1 = index;
+//	size_t index2 = index + 1;
+//	size_t index3 = index + 2;
+//	// 最初の区間のp0はp1を重複使用する
+//	if (index == 0) {
+//		index0 = index1;
+//	}
+//	// 最初の区間のp3はp2を重複使用する
+//	if (index3 >= points.size()) {
+//		index3 = index2;
+//	}
+//
+//	// 4点の座標
+//	const Vector3& p0 = points[index0];
+//	const Vector3& p1 = points[index1];
+//	const Vector3& p2 = points[index2];
+//	const Vector3& p3 = points[index3];
+//
+//	// 4点を指定してCamull-Rom補間
+//	return CatmullRomInterpolation(p0, p1, p2, p3, t_2);
+//}
