@@ -78,7 +78,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 					   {0.0f,0.0f,1.0f}},
 					   .size{0.5f,0.37f,0.5f}
 	};
-	
+
 
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
@@ -141,17 +141,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		for (int i = 0; i < 3; i++) {
 			obb.orientations[i] = Normnalize(obb.orientations[i]);
 			obb2.orientations[i] = Normnalize(obb2.orientations[i]);
-		}		
+		}
 
 		if (ImGui::TreeNode("OBB1")) {
 			ImGui::DragFloat3("center", &obb.center.x, 0.01f);
-			ImGui::DragFloat3("aabb1Min", &obb.size.x, 0.01f);
+			ImGui::DragFloat3("size", &obb.size.x, 0.01f);
 			ImGui::DragFloat3("rotate", &rotate.x, 0.01f);
-			ImGui::TreePop();		
+			ImGui::TreePop();
 		}
 		if (ImGui::TreeNode("OBB2")) {
 			ImGui::DragFloat3("center", &obb2.center.x, 0.01f);
-			ImGui::DragFloat3("aabb1Min", &obb2.size.x, 0.01f);
+			ImGui::DragFloat3("size", &obb2.size.x, 0.01f);
 			ImGui::DragFloat3("rotate", &rotate2.x, 0.01f);
 			ImGui::TreePop();
 		}
@@ -173,13 +173,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		
-			
-			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, WHITE);
-			DrawOBB(obb2, ViewProjectionMatrix, viewportMatrix, WHITE);
 
-		
-		
+		if (IsCollision(obb, obb2)) {
+			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, RED);
+		}
+		else {
+			DrawOBB(obb, ViewProjectionMatrix, viewportMatrix, WHITE);
+
+		}
+		DrawOBB(obb2, ViewProjectionMatrix, viewportMatrix, WHITE);
+
+
 
 		/// ↑描画処理ここまで
 		///
@@ -479,5 +483,48 @@ bool  IsCollision(const OBB& obb, const Sphere& sphere) {
 }
 
 bool IsCollision(const OBB& obb1, const OBB& obb2) {
-	obb1.center + obb1.size;
+	Vector3 faceNormalAndCross[15];//面法線6本とクロス積9本
+	int crossIndex = 6;//クロス積の配列は６からスタート
+	for (int i = 0; i < 3; i++) {
+		faceNormalAndCross[i] = obb1.orientations[i];
+		faceNormalAndCross[i + 3] = obb2.orientations[i];
+	}
+	//クロス積
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			faceNormalAndCross[crossIndex] = Cross(obb1.orientations[i], obb2.orientations[j]);
+			if (crossIndex < 14) {//6から14まで増やす
+				crossIndex++;
+			}
+		}
+	}
+	for (int i = 0; i < 15; i++) {
+		faceNormalAndCross[i] = Normnalize(faceNormalAndCross[i]);
+		//全ての頂点を軸に対して射影する
+		float projection1 = Dot(obb1.center, faceNormalAndCross[i]);
+		float projection2 = Dot(obb2.center, faceNormalAndCross[i]);
+
+		float halfSize1 = obb1.size.x * std::abs(Dot(obb1.orientations[0], faceNormalAndCross[i])) +
+			obb1.size.y * std::abs(Dot(obb1.orientations[1], faceNormalAndCross[i])) +
+			obb1.size.z * std::abs(Dot(obb1.orientations[2], faceNormalAndCross[i]));
+		
+		float halfSize2 = obb2.size.x * std::abs(Dot(obb2.orientations[0], faceNormalAndCross[i])) +
+			obb2.size.y * std::abs(Dot(obb2.orientations[1], faceNormalAndCross[i])) +
+			obb2.size.z * std::abs(Dot(obb2.orientations[2], faceNormalAndCross[i]));
+
+		//射影した点のmax,minを求める
+		float min1 = projection1 - halfSize1;
+		float min2 = projection2 - halfSize2;
+		float max1 = projection1 + halfSize1;
+		float max2 = projection2 + halfSize2;
+		float L1 = max1 - min1;
+		float L2 = max2 - min2;
+		float sumSpan = L1 + L2;//影の長さの合計
+		float longSpan = (std::max)(max1, max2) - (std::min)(min1, min2);//2つの影の両端の差分
+		if (sumSpan < longSpan) {
+			return false;
+		}
+	}
+
+	return true;
 }
