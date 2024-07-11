@@ -58,15 +58,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	//バネ
 	Spring spring{};
-	spring.naturalLength = 1.0f;
+	spring.anchor = { 0.0f,1.0f,0.0f };
+	spring.naturalLength = 0.7f;
 	spring.stiffness = 100.0f;
 	spring.dampingCoefficient = 2.0f;
 	//ボール
 	Ball ball{};
-	ball.pos = { 1.2f,0.0f,0.0f };
+	ball.pos = { 0.8f,0.2f,0.0f };
 	ball.mass = 2.0f;
 	ball.radius = 0.05f;
 	ball.color = BLUE;
+	const Vector3 kGravity{ 0.0f,-9.8f,0.0f };
 	//デルタタイム
 	float deltaTime = 1.0f / 60.0f;
 	Vector3 restoringForce;
@@ -118,7 +120,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			 //減衰抵抗を計算する
 			 Vector3 dampingForce = ball.velocity * -spring.dampingCoefficient;
 			 //減衰抵抗も加味して、物体にかかる力を決定する
-			 Vector3 force = restoringForce + dampingForce;
+			 Vector3 force = restoringForce + dampingForce+kGravity;
 
 			ball.acceleration = force / ball.mass;
 		}
@@ -139,7 +141,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		LineDraw(Vector3{}, ball.pos, ViewProjectionMatrix, viewportMatrix, WHITE);
+		LineDraw(Vector3{0,1.0,0}, ball.pos, ViewProjectionMatrix, viewportMatrix, WHITE);
 		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, ball.color);
 
 
