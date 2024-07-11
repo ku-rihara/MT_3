@@ -15,6 +15,9 @@ struct Vector3 {
     Vector3 operator*(const float& scalar)const;
 
     Vector3 operator/(const Vector3& obj)const;
+    Vector3 operator/(const float& obj)const;
+
+    void operator+=(const Vector3& obj);
 };
 
 Vector3 Normnalize(const Vector3& v);  //正規化

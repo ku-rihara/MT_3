@@ -56,39 +56,27 @@ Vector3 Vector3:: operator*(const float& obj)  const {
 
 Vector3 Vector3:: operator/(const Vector3& obj)  const {
 
-	Vector3 result;
-
-	if (obj.x != 0) {
+	Vector3 result;	
 		result.x = x / obj.x;
-
-	}
-	else {
-		result.x = 0;
-
-	}
-
-	if (obj.y != 0) {
 		result.y = y / obj.y;
-
-	}
-	else {
-		result.y = 0;
-
-	}
-
-	if (obj.z != 0) {
 		result.z = z / obj.z;
-
-	}
-	else {
-		result.z = 0;
-
-	}
-
 	return result;
-
 }
 
+Vector3 Vector3:: operator/(const float& obj)  const {
+
+	Vector3 result;
+	result.x = x / obj;
+	result.y = y / obj;
+	result.z = z / obj;
+	return result;
+}
+
+void Vector3::operator+=(const Vector3& obj) {
+	x += obj.x;
+	y += obj.y;
+	z += obj.z;
+}
 
 //内積
 float Dot(const Vector3& v1, const Vector3& v2) {
