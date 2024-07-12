@@ -60,6 +60,8 @@ float Clamp(float n, float min, float max);
 size_t Clamp(size_t n, size_t min, size_t max);
 Vector3 Lerp(const Vector3& start, const Vector3& end, float t);
 
+bool IsColligion(const Sphere& sphere, const Plane& plane);
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
 void LineDraw(const Vector3& startPos, const Vector3& endPos, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
@@ -282,7 +284,6 @@ void LineDraw(const Vector3& startPos, const Vector3& endPos, const Matrix4x4& v
 
 }
 
-
 Vector3 Perpendicular(const Vector3& vector) {
 	if (vector.x != 0.0f || vector.y != 0.0f) {
 		return{ -vector.y,vector.x,0.0f };
@@ -290,7 +291,33 @@ Vector3 Perpendicular(const Vector3& vector) {
 	return { 0.0f,-vector.z,vector.y };
 }
 
+void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color) {
+	Vector3 center = Multiply(plane.normal, plane.distance);
+	Vector3 perpendiculars[4];
+	perpendiculars[0] = Normnalize(Perpendicular(plane.normal));
+	perpendiculars[1] = { -perpendiculars[0].x,-perpendiculars[0].y,-perpendiculars[0].z };
+	perpendiculars[2] = Cross(plane.normal, perpendiculars[0]);
+	perpendiculars[3] = { -perpendiculars[2].x, -perpendiculars[2].y, -perpendiculars[2].z };
 
+	Vector3 points[4];
+	for (int32_t index = 0; index < 4; ++index) {
+		Vector3 extend = perpendiculars[index] * 2.0f;
+		Vector3 point = center + extend;
+		points[index] = Matrix4x4::ScreenTransform(point, viewProjectionMatrix, viewportMatrix);
+	}
+
+	Novice::DrawLine(int(points[1].x), int(points[1].y), int(points[2].x), int(points[2].y), color);
+	Novice::DrawLine(int(points[2].x), int(points[2].y), int(points[0].x), int(points[0].y), color);
+	Novice::DrawLine(int(points[3].x), int(points[3].y), int(points[0].x), int(points[0].y), color);
+	Novice::DrawLine(int(points[3].x), int(points[3].y), int(points[1].x), int(points[1].y), color);
+
+}
+
+bool IsColligion(const Sphere& sphere, const Plane& plane) {
+	float distance = std::abs(Dot(plane.normal, sphere.center) - plane.distance);
+	return distance <= sphere.radius;
+
+}
 
 
 Vector3 Lerp(const Vector3& start, const Vector3& end, float t) {
