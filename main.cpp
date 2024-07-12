@@ -40,6 +40,14 @@ struct Ball {
 	unsigned int color;
 };
 
+struct ConicalPendulum {
+	Vector3 anchor;
+	float length;
+	float halfApexAngle;
+	float angle;
+	float angularVelocity;
+};
+
 static const int kWindowWidth = 1280;
 static const int kWindowHeight = 720;
 
@@ -64,19 +72,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
-	
-	
+
+
 	float deltaTime = 1.0f / 60.0f;
-	Pendulum pendulum;
-	pendulum.anchor={ 0.0f,1.0f,0.0f };
-	pendulum.length = 0.8f;
-	pendulum.angle = 0.7f;
-	pendulum.angularVelocity = 0.0f;
-	pendulum.angularAcceleration = 0.0f;
+	ConicalPendulum conicalPendulum;
+	conicalPendulum.anchor = { 0.0f,1.0f,0.0f };
+	conicalPendulum.length = 0.8f;
+	conicalPendulum.halfApexAngle = 0.7f;
+	conicalPendulum.angle = 0.0f;
+	conicalPendulum.angularVelocity = 0.0f;
 	Vector3 p;
 	Sphere sphere;
-	bool isstart=false;
-	
+	bool isstart = false;
+
 	// キー入力結果を受け取る箱
 	char keys[256] = { 0 };
 	char preKeys[256] = { 0 };
@@ -105,26 +113,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		ImGui::End();
 
-	
+
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
 		Matrix4x4 ViewProjectionMatrix = viewMatrix * projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		
-		if (isstart) {
-			pendulum.angularAcceleration = -(9.8f / pendulum.length) * std::sin(pendulum.angle);
-			pendulum.angularVelocity += pendulum.angularAcceleration * deltaTime;
-			pendulum.angle += pendulum.angularVelocity * deltaTime;
-		}
-	
-		//pは振り子の先端の位置
-		p.x = pendulum.anchor.x + std::sin(pendulum.angle) * pendulum.length;
-		p.y = pendulum.anchor.y - std::cos(pendulum.angle) * pendulum.length;
-		p.z = pendulum.anchor.x;
 
-		sphere.center = p;
-		sphere.radius =0.05f;
+		if (isstart) {
+			conicalPendulum.angularVelocity = std::sqrt(9.8f/(conicalPendulum.length * std::cos(conicalPendulum.halfApexAngle)));
+			conicalPendulum.angle += conicalPendulum.angularVelocity * deltaTime;
+		}
+		float radius = std::sin(conicalPendulum.halfApexAngle) * conicalPendulum.length;
+		float height = std::cos(conicalPendulum.halfApexAngle) * conicalPendulum.length;
+		sphere.center.x = conicalPendulum.anchor.x + std::cos(conicalPendulum.angle) * radius;
+		sphere.center.y = conicalPendulum.anchor.y - height;
+		sphere.center.z = conicalPendulum.anchor.z - std::sin(conicalPendulum.angle) * radius;
+
+		//pは振り子の先端の位置
+		sphere.radius = 0.05f;
 		///
 		/// ↑更新処理ここまで
 		///
@@ -134,7 +141,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
 		LineDraw({ 0,1,0 }, sphere.center, ViewProjectionMatrix, viewportMatrix, WHITE);
-		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix,BLUE);
+		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, BLUE);
 
 
 		/// ↑描画処理ここまで
