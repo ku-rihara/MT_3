@@ -56,22 +56,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
-	//バネ
-	Spring spring{};
-	spring.anchor = { 0.0f,1.0f,0.0f };
-	spring.naturalLength = 0.7f;
-	spring.stiffness = 100.0f;
-	spring.dampingCoefficient = 2.0f;
-	//ボール
-	Ball ball{};
-	ball.pos = { 0.8f,0.2f,0.0f };
-	ball.mass = 2.0f;
-	ball.radius = 0.05f;
-	ball.color = BLUE;
-	const Vector3 kGravity{ 0.0f,-9.8f,0.0f };
-	//デルタタイム
+	
+	float angularVelocity = 3.14f;
+	float angle = 0.0f;
 	float deltaTime = 1.0f / 60.0f;
-	Vector3 restoringForce;
+	Vector3 p = {};
 	Sphere sphere;
 	bool isstart=false;
 	
@@ -98,41 +87,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		camelaMatrix = camelaMatrix * Matrix4x4::MakeRotateYMatrix(cameraRotate.y);
 		camelaMatrix = camelaMatrix * Matrix4x4::MakeRotateZMatrix(cameraRotate.z);
 		ImGui::DragFloat3("CameraRotate", &cameraRotate.x, 0.01f);
-		ImGui::Text("Push:SPACE");
-		ImGui::End();
-
-		if (keys[DIK_SPACE]&&!isstart) {
+		if (ImGui::Button("Start")) {
 			isstart = true;
 		}
+		ImGui::End();
 
+	
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
 		Matrix4x4 ViewProjectionMatrix = viewMatrix * projectionMatrix;
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
-		Vector3 diff = ball.pos - spring.anchor;
-		float length = Length(diff);
-		if (length != 0.0f) {
-			Vector3 direction = Normnalize(diff);
-			Vector3 restPosition = spring.anchor + direction * spring.naturalLength;
-			Vector3 displacement = (ball.pos - restPosition) * length;
-			 restoringForce = displacement * -spring.stiffness;
-			 //減衰抵抗を計算する
-			 Vector3 dampingForce = ball.velocity * -spring.dampingCoefficient;
-			 //減衰抵抗も加味して、物体にかかる力を決定する
-			 Vector3 force = restoringForce + dampingForce+kGravity;
-
-			ball.acceleration = force / ball.mass;
-		}
-
+		
 		if (isstart) {
-			//加速度も速度もどちらも秒を基準とした値である
-			//それが、1/60秒間（deltaTime）適応されたと考えられる
-			ball.velocity += ball.acceleration * deltaTime;
-			ball.pos += ball.velocity * deltaTime;
+			angle += angularVelocity * deltaTime;
 		}
-		sphere.center = ball.pos;
-		sphere.radius = ball.radius;
+		p.x = 0 + std::cos(angle) * 0.8f;
+		p.y = 0 + std::sin(angle) * 0.8f;
+		p.z = 0;
+		sphere.center = p;
+		sphere.radius =0.05f;
 		///
 		/// ↑更新処理ここまで
 		///
@@ -141,8 +115,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		LineDraw(Vector3{0,1.0,0}, ball.pos, ViewProjectionMatrix, viewportMatrix, WHITE);
-		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, ball.color);
+		
+		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix,BLUE);
 
 
 		/// ↑描画処理ここまで
