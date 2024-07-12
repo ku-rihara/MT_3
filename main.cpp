@@ -23,6 +23,14 @@ struct Spring {
 	float dampingCoefficient;//減衰係数
 };
 
+struct Pendulum {
+	Vector3 anchor;//
+	float length;
+	float angle;
+	float angularVelocity;
+	float angularAcceleration;
+};
+
 struct Ball {
 	Vector3 pos;
 	Vector3 velocity;
@@ -57,10 +65,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 	
-	float angularVelocity = 3.14f;
-	float angle = 0.0f;
+	
 	float deltaTime = 1.0f / 60.0f;
-	Vector3 p = {};
+	Pendulum pendulum;
+	pendulum.anchor={ 0.0f,1.0f,0.0f };
+	pendulum.length = 0.8f;
+	pendulum.angle = 0.7f;
+	pendulum.angularVelocity = 0.0f;
+	pendulum.angularAcceleration = 0.0f;
+	Vector3 p;
 	Sphere sphere;
 	bool isstart=false;
 	
@@ -100,11 +113,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		
 		if (isstart) {
-			angle += angularVelocity * deltaTime;
+			pendulum.angularAcceleration = -(9.8f / pendulum.length) * std::sin(pendulum.angle);
+			pendulum.angularVelocity += pendulum.angularAcceleration * deltaTime;
+			pendulum.angle += pendulum.angularVelocity * deltaTime;
 		}
-		p.x = 0 + std::cos(angle) * 0.8f;
-		p.y = 0 + std::sin(angle) * 0.8f;
-		p.z = 0;
+	
+		//pは振り子の先端の位置
+		p.x = pendulum.anchor.x + std::sin(pendulum.angle) * pendulum.length;
+		p.y = pendulum.anchor.y - std::cos(pendulum.angle) * pendulum.length;
+		p.z = pendulum.anchor.x;
+
 		sphere.center = p;
 		sphere.radius =0.05f;
 		///
@@ -115,7 +133,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-		
+		LineDraw({ 0,1,0 }, sphere.center, ViewProjectionMatrix, viewportMatrix, WHITE);
 		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix,BLUE);
 
 
