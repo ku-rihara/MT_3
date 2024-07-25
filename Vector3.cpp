@@ -54,6 +54,14 @@ Vector3 Vector3:: operator*(const float& obj)  const {
 	return result;
 }
 
+ Vector3 operator*(const float& scalar, const Vector3& vec) {
+	 Vector3 result;
+	 result.x = vec.x * scalar;
+	 result.y = vec.y * scalar;
+	 result.z = vec.z * scalar;
+	 return result;
+}
+
 Vector3 Vector3:: operator/(const Vector3& obj)  const {
 
 	Vector3 result;	

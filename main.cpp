@@ -61,6 +61,8 @@ void DrawGrid(const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMa
 
 Vector3 Perpendicular(const Vector3& vector);
 
+Vector3 Project(const Vector3& v1, const Vector3& v2);
+
 float Clamp(float n, float min, float max);
 size_t Clamp(size_t n, size_t min, size_t max);
 Vector3 Lerp(const Vector3& start, const Vector3& end, float t);
@@ -131,15 +133,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 viewportMatrix = Matrix4x4::MakeViewportMatrix(0, 0, float(kWindowWidth), float(kWindowHeight), 0.0f, 1.0f);
 
 		if (isstart) {
-			ball.velocity += ball.acceleration * deltaTime;
-			ball.pos += ball.velocity * deltaTime;
+			ball.velocity += (ball.acceleration * deltaTime);
+			ball.pos += (ball.velocity * deltaTime);
 		}
 		if (IsColligion(Sphere(ball.pos, ball.radius), plane)) {
 			Vector3 reflected = Reflect(ball.velocity, plane.normal);
-			Vector3 projectToNormal=Pr()
+			Vector3 projectToNormal = Project(reflected, plane.normal);
+			Vector3 movingDirection = reflected - projectToNormal;
+			ball.velocity = projectToNormal * 0.6f + movingDirection;
 		}
 
-		//pは振り子の先端の位置
+		
 		sphere.center = ball.pos;
 		sphere.radius = ball.radius;
 		///
@@ -150,8 +154,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		/// ↓描画処理ここから
 		///
 		DrawGrid(ViewProjectionMatrix, viewportMatrix);
-
-		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, BLUE);
+		DrawPlane(plane, ViewProjectionMatrix, viewportMatrix, WHITE);
+		DrawSphere(sphere, ViewProjectionMatrix, viewportMatrix, ball.color);
 
 
 		/// ↑描画処理ここまで
@@ -292,6 +296,13 @@ void LineDraw(const Vector3& startPos, const Vector3& endPos, const Matrix4x4& v
 
 }
 
+
+Vector3 Project(const Vector3& v1, const Vector3& v2) {
+	Vector3 normalizeB = Normnalize(v2);
+	float dot = Dot(v1, normalizeB);
+	return normalizeB*dot;
+}
+
 Vector3 Perpendicular(const Vector3& vector) {
 	if (vector.x != 0.0f || vector.y != 0.0f) {
 		return{ -vector.y,vector.x,0.0f };
@@ -328,11 +339,9 @@ bool IsColligion(const Sphere& sphere, const Plane& plane) {
 }
 
 Vector3 Reflect(const Vector3& input, const Vector3& normal) {
-	Vector3 result;
-	result = input -(input * normal)*-2 * normal;
+	Vector3 result = input - 2 * Dot(input, normal) * normal;
 	return result;
 }
-
 
 
 Vector3 Lerp(const Vector3& start, const Vector3& end, float t) {

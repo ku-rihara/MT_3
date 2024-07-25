@@ -13,6 +13,7 @@ struct Vector3 {
 
     Vector3 operator*(const Vector3& obj)const;
     Vector3 operator*(const float& scalar)const;
+    friend Vector3 operator*(const float& scalar, const Vector3& vec);
 
     Vector3 operator/(const Vector3& obj)const;
     Vector3 operator/(const float& obj)const;
