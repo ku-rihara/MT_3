@@ -37,6 +37,7 @@ struct Pendulum {
 };
 
 struct Ball {
+	Vector3 prePos;
 	Vector3 pos;
 	Vector3 velocity;
 	Vector3 acceleration;
@@ -52,6 +53,12 @@ struct ConicalPendulum {
 	float angle;
 	float angularVelocity;
 };
+struct Capsule {
+	Vector3 segmentStart;
+	Vector3 segmentEnd;
+	float radius;
+};
+
 
 static const int kWindowWidth = 1280;
 static const int kWindowHeight = 720;
@@ -70,6 +77,7 @@ Vector3 Lerp(const Vector3& start, const Vector3& end, float t);
 Vector3 Reflect(const Vector3& input, const Vector3& normal);
 
 bool IsColligion(const Sphere& sphere, const Plane& plane);
+bool IsCollision(const Capsule& capsule, const Plane& plane);
 void DrawPlane(const Plane& plane, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewportMatrix, uint32_t color);
 
 void DrawSphere(const Sphere& sphere, const Matrix4x4& viewProjectionMatrix, const Matrix4x4& viewprtMatrix, uint32_t color);
@@ -84,10 +92,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector3 cameraTranslate{ 0.0f,0.0f,-6.49f };
 	Vector3 cameraRotate{ 0.26f,0.0f,0.0f };
 
-
+	Capsule capsule{};
 	float deltaTime = 1.0f / 60.0f;
 	Plane plane;
-	plane.normal = Normnalize({ -0.2f,0.9f,-0.3f });
+	plane.normal = Normnalize({ -0.2f,1.2f,-0.3f });
 	plane.distance = 0.0f;
 	Ball ball{};
 	ball.pos = { 0.8f,1.2f,0.3f };
@@ -114,6 +122,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		///
 		/// ↓更新処理ここから
 		///
+		ball.prePos = ball.pos;
 		ImGui::Begin("Window");
 		ImGui::DragFloat3("CameraTranslate", &cameraTranslate.x, 0.01f);
 		Matrix4x4 camelaMatrix = Matrix4x4::MakeAffineMatrix({ 1.0f,1.0f,1.0f }, {}, cameraTranslate);
@@ -126,6 +135,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		ImGui::End();
 
+		
 
 		Matrix4x4 viewMatrix = Matrix4x4::Inverse(camelaMatrix);
 		Matrix4x4 projectionMatrix = Matrix4x4::MakePerspectiveFovMatrix(0.45f, float(kWindowWidth) / float(kWindowHeight), 0.1f, 100.0f);
@@ -136,14 +146,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ball.velocity += (ball.acceleration * deltaTime);
 			ball.pos += (ball.velocity * deltaTime);
 		}
-		if (IsColligion(Sphere(ball.pos, ball.radius), plane)) {
+		if (IsCollision(capsule, plane)) {
 			Vector3 reflected = Reflect(ball.velocity, plane.normal);
 			Vector3 projectToNormal = Project(reflected, plane.normal);
 			Vector3 movingDirection = reflected - projectToNormal;
 			ball.velocity = projectToNormal * 0.6f + movingDirection;
 		}
-
 		
+		capsule.segmentStart = ball.prePos;
+		capsule.segmentEnd = ball.pos;
+		capsule.radius = ball.radius;
 		sphere.center = ball.pos;
 		sphere.radius = ball.radius;
 		///
@@ -337,7 +349,15 @@ bool IsColligion(const Sphere& sphere, const Plane& plane) {
 	return distance <= sphere.radius;
 
 }
+bool IsCollision(const Capsule& capsule, const Plane& plane) {
+	
+	float distanceStart = std::abs(Dot(plane.normal,capsule.segmentStart) - plane.distance);
+	float distanceEnd = std::abs(Dot(plane.normal,capsule.segmentEnd) - plane.distance);
 
+	// 平面との最近接点の距離がカプセルの半径以内であれば衝突とする
+	float minDistance = distanceEnd + (distanceEnd - distanceStart);
+	return minDistance <= capsule.radius;
+}
 Vector3 Reflect(const Vector3& input, const Vector3& normal) {
 	Vector3 result = input - 2 * Dot(input, normal) * normal;
 	return result;
