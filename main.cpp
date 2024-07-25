@@ -98,7 +98,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	plane.normal = Normnalize({ -0.2f,1.2f,-0.3f });
 	plane.distance = 0.0f;
 	Ball ball{};
-	ball.pos = { 0.8f,1.2f,0.3f };
+	ball.pos = { 0.8f,50.2f,0.3f };
 	ball.mass = 2.0f;
 	ball.radius = 0.05f;
 	ball.color = WHITE;
